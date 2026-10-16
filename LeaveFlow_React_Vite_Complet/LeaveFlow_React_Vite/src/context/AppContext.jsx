@@ -1,0 +1,5 @@
+import React,{createContext,useContext,useState} from 'react';import {seed} from '../data/seed';
+const C=createContext();const key='leaveflow-static-v1';
+export function AppProvider({children}){const [db,setDB]=useState(()=>{try{return JSON.parse(localStorage.getItem(key))||structuredClone(seed)}catch{return structuredClone(seed)}});const [toast,setToast]=useState('');function update(fn){setDB(old=>{const next=structuredClone(old);fn(next);localStorage.setItem(key,JSON.stringify(next));return next})}function notify(text){setToast(text);setTimeout(()=>setToast(''),4000)}const user=db.users.find(u=>u.id===db.session);function login(id){update(d=>d.session=id)}function logout(){update(d=>d.session=null)}function reset(){localStorage.removeItem(key);setDB(structuredClone(seed))}return <C.Provider value={{db,update,user,login,logout,notify,reset}}>{children}{toast&&<div className="toast" role="status">✓ {toast}</div>}</C.Provider>}
+export const useApp=()=>useContext(C);
+export function workdays(start,end){let n=0;for(let d=new Date(start+'T12:00:00');d<=new Date(end+'T12:00:00');d.setDate(d.getDate()+1))if(d.getDay()!==0&&d.getDay()!==6)n++;return n}

@@ -1,0 +1,1 @@
+import React from 'react';import {Link} from 'react-router-dom';export default function NotFound(){return <div className='not-found'><h1>Cette page a pris des congés.</h1><p>Retrouvez votre espace LeaveFlow.</p><Link className='btn' to='/login'>Retour à la connexion →</Link></div>}

@@ -1,0 +1,9 @@
+import React from 'react';import {Download,Plus,X} from 'lucide-react';
+export const date=v=>new Date(v+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+export function Heading({eyebrow='VOTRE ESPACE LEAVEFLOW',title,sub,children}){return <div className="page-heading"><div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1><p>{sub}</p></div><div className="heading-actions">{children}</div></div>}
+export function Badge({status}){return <span className={'badge status-'+status}>{status}</span>}
+export function Avatar({name}){return <span className="avatar">{name.split(' ').map(s=>s[0]).slice(0,2).join('')}</span>}
+export function Empty({text='Aucun élément à afficher.'}){return <div className="empty">{text}</div>}
+export function Modal({title,children,onClose}){return <div className="modal-bg" onClick={onClose}><section role="dialog" aria-modal="true" aria-label={title} className="modal" onClick={e=>e.stopPropagation()}><div className="section-head"><h2>{title}</h2><button className="icon-btn" onClick={onClose} aria-label="Fermer"><X size={20}/></button></div>{children}</section></div>}
+export function exportCSV(rows,name='leaveflow'){if(!rows.length)return;const cols=Object.keys(rows[0]);const csv='\ufeff'+[cols,...rows.map(r=>cols.map(c=>r[c]??''))].map(row=>row.map(x=>'"'+String(x).replaceAll('"','""')+'"').join(';')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download=name+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+export function Export({rows}){return <div className="button-group"><button className="btn secondary" onClick={()=>exportCSV(rows)}><Download size={15}/>CSV</button><button className="btn secondary" onClick={()=>window.print()}>PDF / imprimer</button></div>}

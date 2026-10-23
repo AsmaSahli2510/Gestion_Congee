@@ -1,1 +1,0 @@
-import React from 'react';import {Navigate,Outlet} from 'react-router-dom';import {useApp} from '../context/AppContext';export default function RoleGuard({role}){const {user}=useApp();return !user?<Navigate to='/login' replace/>:user.role!==role?<Navigate to={'/'+user.role+'/dashboard'} replace/>:<Outlet/>}

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account | Gestion des Congés</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #eef2ff, #f8fafc);
+            color: #1e293b;
+        }
+
+        .register-card {
+            width: 100%;
+            max-width: 460px;
+            padding: 36px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 45px rgba(15, 23, 42, 0.10);
+        }
+
+        .logo {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+            background: #4f46e5;
+            color: white;
+            font-size: 25px;
+            font-weight: bold;
+        }
+
+        h1 {
+            margin: 0;
+            text-align: center;
+            font-size: 27px;
+        }
+
+        .subtitle {
+            margin: 10px 0 28px;
+            text-align: center;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .field {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+        }
+
+        .submit-btn {
+            width: 100%;
+            margin-top: 4px;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            background: #4f46e5;
+            color: white;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .submit-btn:hover {
+            background: #4338ca;
+        }
+
+        .message {
+            padding: 12px;
+            margin-bottom: 18px;
+            border-radius: 9px;
+            font-size: 14px;
+        }
+
+        .error {
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+        .footer {
+            margin-top: 24px;
+            text-align: center;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        a {
+            color: #4f46e5;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 420px) {
+            .register-card {
+                padding: 24px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="register-card">
+
+    <div class="logo">G</div>
+
+    <h1>Create account</h1>
+    <p class="subtitle">
+        Join Gestion des Congés
+    </p>
+
+    <div class="message error"
+         th:if="${error}"
+         th:text="${error}">
+    </div>
+
+    <form th:action="@{/register}" method="post">
+
+        <div class="form-row">
+            <div class="field">
+                <label for="prenom">First name</label>
+                <input id="prenom"
+                       type="text"
+                       name="prenom"
+                       autocomplete="given-name"
+                       required>
+            </div>
+
+            <div class="field">
+                <label for="nom">Last name</label>
+                <input id="nom"
+                       type="text"
+                       name="nom"
+                       autocomplete="family-name"
+                       required>
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="email">Email address</label>
+            <input id="email"
+                   type="email"
+                   name="email"
+                   autocomplete="email"
+                   required>
+        </div>
+
+        <div class="field">
+            <label for="password">Password</label>
+            <input id="password"
+                   type="password"
+                   name="password"
+                   minlength="8"
+                   autocomplete="new-password"
+                   required>
+        </div>
+
+        <div class="field">
+            <label for="confirmPassword">Confirm password</label>
+            <input id="confirmPassword"
+                   type="password"
+                   name="confirmPassword"
+                   minlength="8"
+                   autocomplete="new-password"
+                   required>
+        </div>
+
+        <button class="submit-btn" type="submit">
+            Create account
+        </button>
+    </form>
+
+    <div class="footer">
+        Already have an account?
+        <a th:href="@{/login}">Sign in</a>
+    </div>
+
+</div>
+</body>
+</html>

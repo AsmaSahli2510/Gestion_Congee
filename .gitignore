@@ -1,0 +1,16 @@
+
+# Frontend
+front-end/node_modules/
+front-end/dist/
+front-end/.env
+front-end/.env.*
+
+# Backend
+back-end/target/
+back-end/.env
+back-end/.env.*
+
+# IDE et système
+.idea/
+.vscode/
+.DS_Store

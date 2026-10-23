@@ -1,0 +1,162 @@
+
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Espace RH | Gestion des Congés</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; font-family: Arial, sans-serif;
+            background: #f5f7fb; color: #1e293b;
+        }
+        .layout { display: flex; min-height: 100vh; }
+        aside {
+            width: 245px; background: #064e3b; color: white;
+            padding: 28px 18px; flex-shrink: 0;
+        }
+        .brand { font-size: 19px; font-weight: bold; margin: 0 0 38px; }
+        .nav-title {
+            color: #a7f3d0; font-size: 11px;
+            text-transform: uppercase; margin: 24px 10px 12px;
+        }
+        nav a {
+            display: block; padding: 13px 12px; margin: 5px 0;
+            color: #d1fae5; text-decoration: none; border-radius: 8px;
+        }
+        nav a.active, nav a:hover { background: #047857; }
+        main { flex: 1; min-width: 0; }
+        header {
+            background: white; padding: 22px 32px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex; justify-content: space-between;
+            align-items: center; gap: 12px; flex-wrap: wrap;
+        }
+        .content { padding: 32px; }
+        h1 { margin: 0; font-size: 26px; }
+        .muted { color: #64748b; }
+        .subtitle { margin: 9px 0 26px; color: #64748b; }
+        .stats {
+            display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px; margin-bottom: 24px;
+        }
+        .stat, .panel {
+            background: white; border-radius: 14px;
+            border: 1px solid #e8edf4; padding: 22px;
+        }
+        .stat-label { color: #64748b; font-size: 13px; }
+        .stat-value { font-size: 29px; font-weight: bold; margin-top: 12px; }
+        .panel { margin-bottom: 22px; }
+        .panel h2 { font-size: 18px; margin: 0 0 8px; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 550px; }
+        th, td {
+            padding: 14px 12px; text-align: left;
+            border-bottom: 1px solid #edf0f5; font-size: 14px;
+        }
+        th { background: #f8fafc; color: #64748b; font-weight: 600; }
+        .empty { padding: 28px; text-align: center; color: #64748b; }
+        .notice {
+            background: #ecfdf5; color: #065f46;
+            padding: 14px; border-radius: 10px; font-size: 14px;
+        }
+        @media(max-width: 800px) {
+            .layout { display: block; }
+            aside { width: 100%; }
+            .brand { margin-bottom: 16px; }
+            .stats { grid-template-columns: 1fr; }
+            .content { padding: 18px; }
+            header { padding: 18px; }
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <aside>
+        <div class="brand">Gestion des Congés</div>
+        <div class="nav-title">Administration RH</div>
+        <nav>
+            <a class="active" th:href="@{/rh/demandes}">📋 Toutes les demandes</a>
+            <a th:href="@{/}">🏠 Accueil</a>
+        </nav>
+        <div class="nav-title">Compte</div>
+        <nav>
+            <a th:href="@{/logout}">↪ Déconnexion</a>
+        </nav>
+    </aside>
+
+    <main>
+        <header>
+            <div>
+                <h1>Ressources humaines</h1>
+                <div class="muted">Vue globale des congés</div>
+            </div>
+            <span class="muted">Rôle : RH</span>
+        </header>
+
+        <div class="content">
+            <p class="subtitle">
+                Suivez les demandes et les informations de congé des employés.
+            </p>
+
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">Demandes répertoriées</div>
+                    <div class="stat-value"
+                         th:text="${demandes != null ? #lists.size(demandes) : 0}">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Employés répertoriés</div>
+                    <div class="stat-value"
+                         th:text="${utilisateurs != null ? #lists.size(utilisateurs) : 0}">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Administration</div>
+                    <div class="stat-value" style="font-size:20px">RH</div>
+                </div>
+            </div>
+
+            <section class="panel">
+                <h2>Toutes les demandes de congé</h2>
+                <p class="muted">Vue d'ensemble des demandes enregistrées.</p>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Employé</th>
+                            <th>Type</th>
+                            <th>Date début</th>
+                            <th>Date fin</th>
+                            <th>Statut</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${demandes == null or #lists.isEmpty(demandes)}">
+                            <td colspan="5" class="empty">
+                                Aucune demande à afficher pour le moment.
+                            </td>
+                        </tr>
+                        <tr th:each="demande : ${demandes}">
+                            <td th:text="${demande.utilisateur != null ? demande.utilisateur.prenom + ' ' + demande.utilisateur.nom : '—'}">Employé</td>
+                            <td th:text="${demande.typeConge != null ? demande.typeConge : '—'}">Annuel</td>
+                            <td th:text="${demande.dateDebut}">2026-10-20</td>
+                            <td th:text="${demande.dateFin}">2026-10-22</td>
+                            <td th:text="${demande.statut}">EN_ATTENTE</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <div class="notice">
+                Cette page présente les demandes. La gestion des employés,
+                des soldes et les rapports nécessiteront des fonctionnalités
+                supplémentaires dans les contrôleurs et services.
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

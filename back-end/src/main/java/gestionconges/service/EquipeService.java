@@ -4,9 +4,11 @@ import gestionconges.entity.Entreprise;
 import gestionconges.entity.Equipe;
 import gestionconges.entity.Utilisateur;
 import gestionconges.enums.Role;
+import gestionconges.exception.ResourceNotFoundException;
 import gestionconges.repository.EntrepriseRepository;
 import gestionconges.repository.EquipeRepository;
 import gestionconges.repository.UtilisateurRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,22 +21,27 @@ public class EquipeService {
     private final EntrepriseRepository entrepriseRepository;
     private final UtilisateurRepository utilisateurRepository;
 
-    public EquipeService(EquipeRepository equipeRepository,
-                         EntrepriseRepository entrepriseRepository,
-                         UtilisateurRepository utilisateurRepository) {
+    @Autowired
+    public EquipeService(
+            @Autowired EquipeRepository equipeRepository,
+            @Autowired EntrepriseRepository entrepriseRepository,
+            @Autowired UtilisateurRepository utilisateurRepository) {
         this.equipeRepository = equipeRepository;
         this.entrepriseRepository = entrepriseRepository;
         this.utilisateurRepository = utilisateurRepository;
     }
 
+    @Transactional(readOnly = true)
     public List<Equipe> getEquipes(Long entrepriseId) {
         return equipeRepository.findByEntreprise_Id(entrepriseId);
     }
 
+    @Transactional(readOnly = true)
     public List<Equipe> getEquipesActives(Long entrepriseId) {
         return equipeRepository.findByEntreprise_IdAndActiveTrue(entrepriseId);
     }
 
+    @Transactional(readOnly = true)
     public Equipe trouverParIdEtEntreprise(Long equipeId, Long entrepriseId) {
         return equipeRepository.findByIdAndEntreprise_Id(equipeId, entrepriseId)
                 .orElseThrow(() -> new IllegalArgumentException("Équipe introuvable ou non autorisée"));
@@ -43,7 +50,7 @@ public class EquipeService {
     @Transactional
     public Equipe creerEquipe(Long entrepriseId, String nom, String description, Long managerId) {
         Entreprise entreprise = entrepriseRepository.findById(entrepriseId)
-                .orElseThrow(() -> new IllegalArgumentException("Entreprise introuvable : " + entrepriseId));
+                .orElseThrow(() -> new ResourceNotFoundException("Entreprise", entrepriseId));
 
         Equipe equipe = new Equipe(nom.trim(), entreprise);
         equipe.setDescription(description);
@@ -116,6 +123,7 @@ public class EquipeService {
         utilisateurRepository.save(utilisateur);
     }
 
+    @Transactional(readOnly = true)
     public List<Utilisateur> getMembresEquipe(Long equipeId) {
         return utilisateurRepository.findByEquipe_Id(equipeId);
     }

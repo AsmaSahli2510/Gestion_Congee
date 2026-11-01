@@ -6,10 +6,12 @@ import gestionconges.enums.Role;
 import gestionconges.repository.EquipeRepository;
 import gestionconges.repository.UtilisateurRepository;
 import gestionconges.service.StatistiquesService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,19 +21,12 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/statistiques")
+@CrossOrigin(origins = "*")
 public class StatistiquesRestController {
 
-    private final StatistiquesService statistiquesService;
-    private final UtilisateurRepository utilisateurRepository;
-    private final EquipeRepository equipeRepository;
-
-    public StatistiquesRestController(StatistiquesService statistiquesService,
-                                      UtilisateurRepository utilisateurRepository,
-                                      EquipeRepository equipeRepository) {
-        this.statistiquesService = statistiquesService;
-        this.utilisateurRepository = utilisateurRepository;
-        this.equipeRepository = equipeRepository;
-    }
+    @Autowired private StatistiquesService statistiquesService;
+    @Autowired private UtilisateurRepository utilisateurRepository;
+    @Autowired private EquipeRepository equipeRepository;
 
     private Utilisateur getUtilisateurConnecte(Principal principal) {
         if (principal == null) {

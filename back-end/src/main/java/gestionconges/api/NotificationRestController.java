@@ -4,6 +4,7 @@ import gestionconges.entity.Notification;
 import gestionconges.entity.Utilisateur;
 import gestionconges.repository.UtilisateurRepository;
 import gestionconges.service.NotificationService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,16 +15,12 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/notifications")
+@CrossOrigin(origins = "*")
 public class NotificationRestController {
 
-    private final NotificationService notificationService;
-    private final UtilisateurRepository utilisateurRepository;
-
-    public NotificationRestController(NotificationService notificationService, UtilisateurRepository utilisateurRepository) {
-        this.notificationService = notificationService;
-        this.utilisateurRepository = utilisateurRepository;
-    }
-
+    @Autowired private NotificationService notificationService;
+    @Autowired private UtilisateurRepository utilisateurRepository;
+    
     private Utilisateur getUtilisateurConnecte(Principal principal) {
         if (principal == null) {
             throw new IllegalStateException("Utilisateur non authentifié");
@@ -45,7 +42,7 @@ public class NotificationRestController {
     }
 
     @PostMapping("/{id}/lire")
-    public ResponseEntity<?> marquerCommeLue(@PathVariable Long id, Principal principal) {
+    public ResponseEntity<?> marquerCommeLue(@PathVariable("id") Long id, Principal principal) {
         Utilisateur user = getUtilisateurConnecte(principal);
         notificationService.marquerCommeLue(id, user.getId());
         return ResponseEntity.ok(Map.of("success", true));

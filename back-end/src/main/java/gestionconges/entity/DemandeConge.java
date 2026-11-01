@@ -1,10 +1,12 @@
 package gestionconges.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import gestionconges.enums.StatutConge;
 import gestionconges.enums.TypeConge;
 import jakarta.persistence.*;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -25,14 +27,8 @@ public class DemandeConge {
     @JoinColumn(name = "utilisateur_id", nullable = false)
     private Utilisateur utilisateur;
 
-    @Column(name = "date_debut", nullable = false)
-    private LocalDate dateDebut;
-
-    @Column(name = "date_fin", nullable = false)
-    private LocalDate dateFin;
-
-    @Column(name = "nombre_jours")
-    private Integer nombreJours = 1;
+    @Embedded
+    private PeriodeConge periode = new PeriodeConge();
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type_conge", length = 30)
@@ -88,28 +84,40 @@ public class DemandeConge {
         this.utilisateur = utilisateur;
     }
 
+    @JsonIgnore
+    public PeriodeConge getPeriode() {
+        if (periode == null) {
+            periode = new PeriodeConge();
+        }
+        return periode;
+    }
+
+    public void setPeriode(PeriodeConge periode) {
+        this.periode = periode != null ? periode : new PeriodeConge();
+    }
+
     public LocalDate getDateDebut() {
-        return dateDebut;
+        return getPeriode().getDateDebut();
     }
 
     public void setDateDebut(LocalDate dateDebut) {
-        this.dateDebut = dateDebut;
+        getPeriode().setDateDebut(dateDebut);
     }
 
     public LocalDate getDateFin() {
-        return dateFin;
+        return getPeriode().getDateFin();
     }
 
     public void setDateFin(LocalDate dateFin) {
-        this.dateFin = dateFin;
+        getPeriode().setDateFin(dateFin);
     }
 
     public Integer getNombreJours() {
-        return nombreJours != null ? nombreJours : 1;
+        return getPeriode().getNombreJours();
     }
 
     public void setNombreJours(Integer nombreJours) {
-        this.nombreJours = nombreJours;
+        getPeriode().setNombreJours(nombreJours);
     }
 
     public TypeConge getTypeConge() {
@@ -198,17 +206,17 @@ public class DemandeConge {
 
     @JsonProperty("start")
     public String getStart() {
-        return dateDebut != null ? dateDebut.toString() : null;
+        return getDateDebut() != null ? getDateDebut().toString() : null;
     }
 
     @JsonProperty("end")
     public String getEnd() {
-        return dateFin != null ? dateFin.toString() : null;
+        return getDateFin() != null ? getDateFin().toString() : null;
     }
 
     @JsonProperty("days")
     public Integer getDays() {
-        return nombreJours != null ? nombreJours : 1;
+        return getNombreJours();
     }
 
     @JsonProperty("type")

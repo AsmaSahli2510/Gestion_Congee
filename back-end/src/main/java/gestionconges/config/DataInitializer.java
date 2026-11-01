@@ -29,6 +29,7 @@ public class DataInitializer implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
     private final DemandeCongeService demandeCongeService;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public DataInitializer(EntrepriseRepository entrepriseRepository,
                            EquipeRepository equipeRepository,
                            UtilisateurRepository utilisateurRepository,

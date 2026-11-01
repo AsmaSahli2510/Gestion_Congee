@@ -1,9 +1,12 @@
 package gestionconges.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "entreprises")
@@ -28,6 +31,10 @@ public class Entreprise {
 
     @Column(name = "jours_conges_annuels")
     private Integer joursCongesAnnuels = 30;
+
+    @OneToMany(mappedBy = "entreprise", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Equipe> equipes = new ArrayList<>();
 
     @Column(name = "date_creation", nullable = false)
     private LocalDateTime dateCreation = LocalDateTime.now();
@@ -87,6 +94,14 @@ public class Entreprise {
 
     public void setJoursCongesAnnuels(Integer joursCongesAnnuels) {
         this.joursCongesAnnuels = joursCongesAnnuels;
+    }
+
+    public List<Equipe> getEquipes() {
+        return equipes;
+    }
+
+    public void setEquipe(List<Equipe> equipes) {
+        this.equipes = equipes;
     }
 
     public LocalDateTime getDateCreation() {

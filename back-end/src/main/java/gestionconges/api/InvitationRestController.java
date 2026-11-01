@@ -1,10 +1,13 @@
 package gestionconges.api;
 
+import gestionconges.dto.InvitationRequest;
 import gestionconges.entity.Invitation;
 import gestionconges.entity.Utilisateur;
 import gestionconges.enums.Role;
 import gestionconges.repository.UtilisateurRepository;
 import gestionconges.service.InvitationService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,15 +18,11 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/invitations")
+@CrossOrigin(origins = "*")
 public class InvitationRestController {
 
-    private final InvitationService invitationService;
-    private final UtilisateurRepository utilisateurRepository;
-
-    public InvitationRestController(InvitationService invitationService, UtilisateurRepository utilisateurRepository) {
-        this.invitationService = invitationService;
-        this.utilisateurRepository = utilisateurRepository;
-    }
+    @Autowired private InvitationService invitationService;
+    @Autowired private UtilisateurRepository utilisateurRepository;
 
     private Utilisateur getUtilisateurConnecte(Principal principal) {
         if (principal == null) {
@@ -43,48 +42,32 @@ public class InvitationRestController {
     }
 
     @PostMapping
-    public ResponseEntity<?> creerInvitation(@RequestBody Map<String, Object> body, Principal principal) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<?> creerInvitation(@Valid @RequestBody InvitationRequest request, Principal principal) {
         Utilisateur user = getUtilisateurConnecte(principal);
         if (user.getRole() != Role.RH || user.getEntreprise() == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "Accès réservé au RH"));
         }
 
-        String email = (String) body.get("email");
-        if (email == null || email.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Email obligatoire"));
-        }
+        Invitation inv = invitationService.creerInvitation(
+                user.getEntreprise().getId(),
+                request.getEmail(),
+                request.getRole(),
+                request.getEquipeId(),
+                request.getPoste()
+        );
 
-        String roleStr = (String) body.get("role");
-        Role role = Role.EMPLOYE;
-        if (roleStr != null && !roleStr.isBlank()) {
-            try {
-                role = Role.valueOf(roleStr.trim().toUpperCase());
-            } catch (Exception ignored) {}
-        }
-
-        Long equipeId = null;
-        if (body.get("equipeId") != null) {
-            equipeId = Long.valueOf(body.get("equipeId").toString());
-        }
-
-        String poste = (String) body.get("poste");
-
-        try {
-            Invitation inv = invitationService.creerInvitation(user.getEntreprise().getId(), email, role, equipeId, poste);
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                    "success", true,
-                    "invitation", inv,
-                    "token", inv.getToken(),
-                    "link", "/invitations/activer?token=" + inv.getToken(),
-                    "message", "Invitation générée avec succès"
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "success", true,
+                "invitation", inv,
+                "token", inv.getToken(),
+                "link", "/invitations/activer?token=" + inv.getToken(),
+                "message", "Invitation générée avec succès"
+        ));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> supprimerInvitation(@PathVariable Long id, Principal principal) {
+    public ResponseEntity<?> supprimerInvitation(@PathVariable("id") Long id, Principal principal) {
         Utilisateur user = getUtilisateurConnecte(principal);
         if (user.getRole() != Role.RH || user.getEntreprise() == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "Accès réservé au RH"));

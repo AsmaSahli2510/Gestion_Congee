@@ -24,6 +24,7 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public SecurityConfig(CustomUserDetailsService userDetailsService) {
         this.userDetailsService = userDetailsService;
     }

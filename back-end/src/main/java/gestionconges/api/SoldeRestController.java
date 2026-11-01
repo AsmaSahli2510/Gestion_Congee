@@ -1,5 +1,6 @@
 package gestionconges.api;
 
+import gestionconges.dto.AjustementSoldeRequest;
 import gestionconges.entity.Equipe;
 import gestionconges.entity.MouvementSolde;
 import gestionconges.entity.SoldeConge;
@@ -8,6 +9,8 @@ import gestionconges.enums.Role;
 import gestionconges.repository.EquipeRepository;
 import gestionconges.repository.UtilisateurRepository;
 import gestionconges.service.SoldeCongeService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,19 +23,12 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/soldes")
+@CrossOrigin(origins = "*")
 public class SoldeRestController {
 
-    private final SoldeCongeService soldeCongeService;
-    private final UtilisateurRepository utilisateurRepository;
-    private final EquipeRepository equipeRepository;
-
-    public SoldeRestController(SoldeCongeService soldeCongeService,
-                               UtilisateurRepository utilisateurRepository,
-                               EquipeRepository equipeRepository) {
-        this.soldeCongeService = soldeCongeService;
-        this.utilisateurRepository = utilisateurRepository;
-        this.equipeRepository = equipeRepository;
-    }
+    @Autowired private SoldeCongeService soldeCongeService;
+    @Autowired private UtilisateurRepository utilisateurRepository;
+    @Autowired private EquipeRepository equipeRepository;
 
     private Utilisateur getUtilisateurConnecte(Principal principal) {
         if (principal == null) {
@@ -107,49 +103,38 @@ public class SoldeRestController {
         return ResponseEntity.ok(data);
     }
 
-    // Ajustement de solde par le RH avec traçabilité (M4)
+    // Ajustement de solde par le RH avec traçabilité et validation DTO
     @PostMapping("/ajuster")
-    public ResponseEntity<?> ajusterSolde(@RequestBody Map<String, Object> body, Principal principal) {
+    public ResponseEntity<?> ajusterSolde(@Valid @RequestBody AjustementSoldeRequest request, Principal principal) {
         Utilisateur user = getUtilisateurConnecte(principal);
         if (user.getRole() != Role.RH || user.getEntreprise() == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "Accès réservé aux administrateurs RH"));
         }
 
-        try {
-            Long soldeId = null;
-            if (body.get("soldeId") != null) {
-                soldeId = Long.valueOf(body.get("soldeId").toString());
-            } else if (body.get("userId") != null) {
-                Long targetUserId = Long.valueOf(body.get("userId").toString());
-                int annee = Year.now().getValue();
-                SoldeConge sc = soldeCongeService.getOuCreerSolde(targetUserId, annee);
-                soldeId = sc.getId();
-            }
-
-            if (soldeId == null) {
-                return ResponseEntity.badRequest().body(Map.of("message", "soldeId ou userId obligatoire"));
-            }
-
-            Object amountObj = body.get("variation") != null ? body.get("variation") : body.get("amount");
-            if (amountObj == null) {
-                return ResponseEntity.badRequest().body(Map.of("message", "La variation de solde est obligatoire"));
-            }
-            int variation = (int) Math.round(Double.parseDouble(amountObj.toString()));
-
-            String raison = (String) (body.get("raison") != null ? body.get("raison") : body.get("reason"));
-            if (raison == null || raison.isBlank()) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Le motif de l'ajustement est obligatoire"));
-            }
-
-            SoldeConge soldeAjuste = soldeCongeService.ajusterSolde(soldeId, user.getEntreprise().getId(), variation, raison, user);
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Ajustement enregistré avec succès dans le journal des mouvements",
-                    "solde", soldeAjuste
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        Long soldeId = request.getSoldeId();
+        if (soldeId == null && request.getUserId() != null) {
+            int annee = Year.now().getValue();
+            SoldeConge sc = soldeCongeService.getOuCreerSolde(request.getUserId(), annee);
+            soldeId = sc.getId();
         }
+
+        if (soldeId == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "soldeId ou userId obligatoire"));
+        }
+
+        SoldeConge soldeAjuste = soldeCongeService.ajusterSolde(
+                soldeId,
+                user.getEntreprise().getId(),
+                request.getVariation(),
+                request.getRaison(),
+                user
+        );
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Ajustement enregistré avec succès dans le journal des mouvements",
+                "solde", soldeAjuste
+        ));
     }
 }

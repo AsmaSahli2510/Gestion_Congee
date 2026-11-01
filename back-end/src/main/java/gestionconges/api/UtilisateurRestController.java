@@ -1,5 +1,6 @@
 package gestionconges.api;
 
+import gestionconges.dto.ProfilUpdateRequest;
 import gestionconges.entity.Equipe;
 import gestionconges.entity.SoldeConge;
 import gestionconges.entity.Utilisateur;
@@ -9,6 +10,7 @@ import gestionconges.repository.EquipeRepository;
 import gestionconges.repository.UtilisateurRepository;
 import gestionconges.service.EquipeService;
 import gestionconges.service.SoldeCongeService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,25 +22,14 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/utilisateurs")
+@CrossOrigin(origins = "*")
 public class UtilisateurRestController {
 
-    private final UtilisateurRepository utilisateurRepository;
-    private final EquipeRepository equipeRepository;
-    private final EquipeService equipeService;
-    private final SoldeCongeService soldeCongeService;
-    private final PasswordEncoder passwordEncoder;
-
-    public UtilisateurRestController(UtilisateurRepository utilisateurRepository,
-                                     EquipeRepository equipeRepository,
-                                     EquipeService equipeService,
-                                     SoldeCongeService soldeCongeService,
-                                     PasswordEncoder passwordEncoder) {
-        this.utilisateurRepository = utilisateurRepository;
-        this.equipeRepository = equipeRepository;
-        this.equipeService = equipeService;
-        this.soldeCongeService = soldeCongeService;
-        this.passwordEncoder = passwordEncoder;
-    }
+    @Autowired private UtilisateurRepository utilisateurRepository;
+    @Autowired private EquipeRepository equipeRepository;
+    @Autowired private EquipeService equipeService;
+    @Autowired private SoldeCongeService soldeCongeService;
+    @Autowired private PasswordEncoder passwordEncoder;
 
     private Utilisateur getUtilisateurConnecte(Principal principal) {
         if (principal == null) {
@@ -118,18 +109,15 @@ public class UtilisateurRestController {
 
     // Modifier son profil
     @PutMapping("/profil")
-    public ResponseEntity<?> modifierProfil(@RequestBody Map<String, String> body, Principal principal) {
+    public ResponseEntity<?> modifierProfil(@RequestBody ProfilUpdateRequest body, Principal principal) {
         Utilisateur user = getUtilisateurConnecte(principal);
 
-        String nom = body.get("nom");
-        String prenom = body.get("prenom");
-        String telephone = body.get("telephone");
-        String ancienMotDePasse = body.get("ancienMotDePasse");
-        String nouveauMotDePasse = body.get("nouveauMotDePasse");
+        if (body.getNom() != null && !body.getNom().isBlank()) user.setNom(body.getNom().trim());
+        if (body.getPrenom() != null && !body.getPrenom().isBlank()) user.setPrenom(body.getPrenom().trim());
+        if (body.getTelephone() != null) user.setTelephone(body.getTelephone().trim());
 
-        if (nom != null && !nom.isBlank()) user.setNom(nom.trim());
-        if (prenom != null && !prenom.isBlank()) user.setPrenom(prenom.trim());
-        if (telephone != null) user.setTelephone(telephone.trim());
+        String nouveauMotDePasse = body.getNouveauMotDePasse();
+        String ancienMotDePasse = body.getAncienMotDePasse();
 
         if (nouveauMotDePasse != null && !nouveauMotDePasse.isBlank()) {
             if (ancienMotDePasse == null || !passwordEncoder.matches(ancienMotDePasse, user.getMotDePasse())) {
@@ -145,9 +133,9 @@ public class UtilisateurRestController {
         return ResponseEntity.ok(Map.of("success", true, "message", "Profil mis à jour avec succès", "user", user));
     }
 
-    // Activer / désactiver un collaborateur (RH)
-    @PostMapping("/{id}/statut")
-    public ResponseEntity<?> basculerStatut(@PathVariable Long id, Principal principal) {
+    // Activer / désactiver un collaborateur (RH) - supporte POST et PATCH
+    @RequestMapping(value = "/{id}/statut", method = {RequestMethod.POST, RequestMethod.PATCH})
+    public ResponseEntity<?> basculerStatut(@PathVariable("id") Long id, Principal principal) {
         Utilisateur rh = getUtilisateurConnecte(principal);
         if (rh.getRole() != Role.RH || rh.getEntreprise() == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "Accès réservé au RH"));
@@ -175,7 +163,7 @@ public class UtilisateurRestController {
 
     // Affecter / changer d'équipe (RH)
     @PostMapping("/{id}/affecter")
-    public ResponseEntity<?> affecterEquipe(@PathVariable Long id, @RequestBody Map<String, Object> body, Principal principal) {
+    public ResponseEntity<?> affecterEquipe(@PathVariable("id") Long id, @RequestBody Map<String, Object> body, Principal principal) {
         Utilisateur rh = getUtilisateurConnecte(principal);
         if (rh.getRole() != Role.RH || rh.getEntreprise() == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "Accès réservé au RH"));
@@ -186,11 +174,7 @@ public class UtilisateurRestController {
             equipeId = Long.valueOf(body.get("equipeId").toString());
         }
 
-        try {
-            equipeService.assignerMembre(id, equipeId, rh.getEntreprise().getId());
-            return ResponseEntity.ok(Map.of("success", true, "message", "Affectation mise à jour avec succès"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
+        equipeService.assignerMembre(id, equipeId, rh.getEntreprise().getId());
+        return ResponseEntity.ok(Map.of("success", true, "message", "Affectation mise à jour avec succès"));
     }
 }

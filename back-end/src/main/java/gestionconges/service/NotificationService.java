@@ -4,6 +4,7 @@ import gestionconges.entity.Entreprise;
 import gestionconges.entity.Notification;
 import gestionconges.entity.Utilisateur;
 import gestionconges.repository.NotificationRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,7 +15,8 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
 
-    public NotificationService(NotificationRepository notificationRepository) {
+    @Autowired
+    public NotificationService(@Autowired NotificationRepository notificationRepository) {
         this.notificationRepository = notificationRepository;
     }
 
@@ -24,34 +26,28 @@ public class NotificationService {
         return notificationRepository.save(notification);
     }
 
+    @Transactional(readOnly = true)
     public List<Notification> getNotifications(Long utilisateurId) {
         return notificationRepository.findByDestinataire_IdOrderByDateCreationDesc(utilisateurId);
     }
 
+    @Transactional(readOnly = true)
     public List<Notification> getNotificationsNonLues(Long utilisateurId) {
         return notificationRepository.findByDestinataire_IdAndLectureFalseOrderByDateCreationDesc(utilisateurId);
     }
 
+    @Transactional(readOnly = true)
     public long getNombreNonLues(Long utilisateurId) {
         return notificationRepository.countByDestinataire_IdAndLectureFalse(utilisateurId);
     }
 
     @Transactional
     public void marquerCommeLue(Long notificationId, Long utilisateurId) {
-        notificationRepository.findById(notificationId).ifPresent(notif -> {
-            if (notif.getDestinataire().getId().equals(utilisateurId)) {
-                notif.setLecture(true);
-                notificationRepository.save(notif);
-            }
-        });
+        notificationRepository.marquerCommeLueByIdAndDestinataireId(notificationId, utilisateurId);
     }
 
     @Transactional
     public void marquerToutesCommeLues(Long utilisateurId) {
-        List<Notification> nonLues = notificationRepository.findByDestinataire_IdAndLectureFalseOrderByDateCreationDesc(utilisateurId);
-        for (Notification n : nonLues) {
-            n.setLecture(true);
-        }
-        notificationRepository.saveAll(nonLues);
+        notificationRepository.marquerToutesCommeLuesByDestinataireId(utilisateurId);
     }
 }

@@ -4,10 +4,17 @@ import gestionconges.entity.Entreprise;
 import gestionconges.entity.MouvementSolde;
 import gestionconges.entity.SoldeConge;
 import gestionconges.entity.Utilisateur;
+import gestionconges.exception.ResourceNotFoundException;
 import gestionconges.repository.EntrepriseRepository;
 import gestionconges.repository.MouvementSoldeRepository;
 import gestionconges.repository.SoldeCongeRepository;
 import gestionconges.repository.UtilisateurRepository;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,22 +25,39 @@ import java.util.Optional;
 @Service
 public class SoldeCongeService {
 
+    private static final Logger log = LoggerFactory.getLogger(SoldeCongeService.class);
+
+    @Value("${leaveflow.conges.jours-par-defaut:30}")
+    private int defaultJoursConges;
+
     private final SoldeCongeRepository soldeCongeRepository;
     private final MouvementSoldeRepository mouvementSoldeRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final EntrepriseRepository entrepriseRepository;
     private final NotificationService notificationService;
 
-    public SoldeCongeService(SoldeCongeRepository soldeCongeRepository,
-                             MouvementSoldeRepository mouvementSoldeRepository,
-                             UtilisateurRepository utilisateurRepository,
-                             EntrepriseRepository entrepriseRepository,
-                             NotificationService notificationService) {
+    @Autowired
+    public SoldeCongeService(
+            @Autowired SoldeCongeRepository soldeCongeRepository,
+            @Autowired MouvementSoldeRepository mouvementSoldeRepository,
+            @Autowired UtilisateurRepository utilisateurRepository,
+            @Autowired EntrepriseRepository entrepriseRepository,
+            @Autowired NotificationService notificationService) {
         this.soldeCongeRepository = soldeCongeRepository;
         this.mouvementSoldeRepository = mouvementSoldeRepository;
         this.utilisateurRepository = utilisateurRepository;
         this.entrepriseRepository = entrepriseRepository;
         this.notificationService = notificationService;
+    }
+
+    @PostConstruct
+    public void init() {
+        log.info("SoldeCongeService initialisé avec un quota par défaut de [{}] jours", defaultJoursConges);
+    }
+
+    @PreDestroy
+    public void cleanup() {
+        log.info("Arrêt de SoldeCongeService");
     }
 
     @Transactional
@@ -48,10 +72,10 @@ public class SoldeCongeService {
         }
 
         Utilisateur utilisateur = utilisateurRepository.findById(utilisateurId)
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable : " + utilisateurId));
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur", utilisateurId));
 
         Entreprise entreprise = utilisateur.getEntreprise();
-        int joursParDefaut = entreprise != null ? entreprise.getJoursCongesAnnuels() : 30;
+        int joursParDefaut = entreprise != null ? entreprise.getJoursCongesAnnuels() : defaultJoursConges;
 
         SoldeConge nouveauSolde = new SoldeConge(entreprise, utilisateur, annee, joursParDefaut, 0);
         nouveauSolde = soldeCongeRepository.save(nouveauSolde);
@@ -71,6 +95,7 @@ public class SoldeCongeService {
         return nouveauSolde;
     }
 
+    @Transactional(readOnly = true)
     public List<SoldeConge> getSoldesEntreprise(Long entrepriseId, Integer annee) {
         if (annee == null) {
             annee = Year.now().getValue();
@@ -78,6 +103,7 @@ public class SoldeCongeService {
         return soldeCongeRepository.findByEntreprise_IdAndAnnee(entrepriseId, annee);
     }
 
+    @Transactional(readOnly = true)
     public List<SoldeConge> getSoldesEquipe(Long equipeId, Integer annee) {
         if (annee == null) {
             annee = Year.now().getValue();
@@ -85,10 +111,12 @@ public class SoldeCongeService {
         return soldeCongeRepository.findByUtilisateur_Equipe_IdAndAnnee(equipeId, annee);
     }
 
+    @Transactional(readOnly = true)
     public List<MouvementSolde> getHistoriqueUtilisateur(Long utilisateurId) {
         return mouvementSoldeRepository.findByUtilisateur_IdOrderByDateMouvementDesc(utilisateurId);
     }
 
+    @Transactional(readOnly = true)
     public List<MouvementSolde> getHistoriqueEntreprise(Long entrepriseId) {
         return mouvementSoldeRepository.findByEntreprise_IdOrderByDateMouvementDesc(entrepriseId);
     }

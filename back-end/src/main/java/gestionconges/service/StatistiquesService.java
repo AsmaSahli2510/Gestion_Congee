@@ -1,14 +1,14 @@
 package gestionconges.service;
 
 import gestionconges.entity.DemandeConge;
-import gestionconges.entity.Equipe;
-import gestionconges.entity.Utilisateur;
 import gestionconges.enums.StatutConge;
 import gestionconges.enums.TypeConge;
 import gestionconges.repository.DemandeCongeRepository;
 import gestionconges.repository.EquipeRepository;
 import gestionconges.repository.UtilisateurRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -21,14 +21,17 @@ public class StatistiquesService {
     private final UtilisateurRepository utilisateurRepository;
     private final EquipeRepository equipeRepository;
 
-    public StatistiquesService(DemandeCongeRepository demandeRepository,
-                               UtilisateurRepository utilisateurRepository,
-                               EquipeRepository equipeRepository) {
+    @Autowired
+    public StatistiquesService(
+            @Autowired DemandeCongeRepository demandeRepository,
+            @Autowired UtilisateurRepository utilisateurRepository,
+            @Autowired EquipeRepository equipeRepository) {
         this.demandeRepository = demandeRepository;
         this.utilisateurRepository = utilisateurRepository;
         this.equipeRepository = equipeRepository;
     }
 
+    @Transactional(readOnly = true)
     public Map<String, Object> getStatsEntreprise(Long entrepriseId) {
         Map<String, Object> stats = new HashMap<>();
 
@@ -76,6 +79,7 @@ public class StatistiquesService {
         return stats;
     }
 
+    @Transactional(readOnly = true)
     public Map<String, Object> getStatsEquipe(Long equipeId) {
         Map<String, Object> stats = new HashMap<>();
 
@@ -101,6 +105,7 @@ public class StatistiquesService {
         return stats;
     }
 
+    @Transactional(readOnly = true)
     public byte[] exporterDemandesCsv(Long entrepriseId) {
         List<DemandeConge> demandes = demandeRepository.findByEntreprise_IdOrderByDateCreationDesc(entrepriseId);
 

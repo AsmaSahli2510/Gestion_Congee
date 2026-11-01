@@ -7,11 +7,14 @@ import gestionconges.entity.SoldeConge;
 import gestionconges.entity.Utilisateur;
 import gestionconges.enums.Role;
 import gestionconges.enums.StatutUtilisateur;
+import gestionconges.exception.ResourceNotFoundException;
 import gestionconges.repository.EntrepriseRepository;
 import gestionconges.repository.EquipeRepository;
 import gestionconges.repository.MouvementSoldeRepository;
 import gestionconges.repository.SoldeCongeRepository;
 import gestionconges.repository.UtilisateurRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +26,9 @@ import java.util.UUID;
 @Service
 public class EntrepriseService {
 
+    @Value("${leaveflow.conges.jours-par-defaut:30}")
+    private int defaultJoursConges;
+
     private final EntrepriseRepository entrepriseRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final EquipeRepository equipeRepository;
@@ -30,12 +36,14 @@ public class EntrepriseService {
     private final MouvementSoldeRepository mouvementSoldeRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public EntrepriseService(EntrepriseRepository entrepriseRepository,
-                             UtilisateurRepository utilisateurRepository,
-                             EquipeRepository equipeRepository,
-                             SoldeCongeRepository soldeCongeRepository,
-                             MouvementSoldeRepository mouvementSoldeRepository,
-                             PasswordEncoder passwordEncoder) {
+    @Autowired
+    public EntrepriseService(
+            @Autowired EntrepriseRepository entrepriseRepository,
+            @Autowired UtilisateurRepository utilisateurRepository,
+            @Autowired EquipeRepository equipeRepository,
+            @Autowired SoldeCongeRepository soldeCongeRepository,
+            @Autowired MouvementSoldeRepository mouvementSoldeRepository,
+            @Autowired PasswordEncoder passwordEncoder) {
         this.entrepriseRepository = entrepriseRepository;
         this.utilisateurRepository = utilisateurRepository;
         this.equipeRepository = equipeRepository;
@@ -64,7 +72,7 @@ public class EntrepriseService {
         String identifiantUnique = codeBase + "-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
 
         Entreprise entreprise = new Entreprise(nomEntreprise, identifiantUnique);
-        entreprise.setJoursCongesAnnuels(30);
+        entreprise.setJoursCongesAnnuels(defaultJoursConges > 0 ? defaultJoursConges : 30);
         entreprise = entrepriseRepository.save(entreprise);
 
         // Créer l'utilisateur RH rattaché
@@ -91,7 +99,7 @@ public class EntrepriseService {
 
         // Initialiser le solde de congés pour l'année courante
         int annee = Year.now().getValue();
-        SoldeConge solde = new SoldeConge(entreprise, rh, annee, 30, 0);
+        SoldeConge solde = new SoldeConge(entreprise, rh, annee, entreprise.getJoursCongesAnnuels(), 0);
         solde = soldeCongeRepository.save(solde);
 
         // Mouvement initial de solde
@@ -99,7 +107,7 @@ public class EntrepriseService {
                 entreprise,
                 solde,
                 rh,
-                30,
+                entreprise.getJoursCongesAnnuels(),
                 "Attribution initiale annuelle de création d'entreprise",
                 rh
         );
@@ -108,9 +116,10 @@ public class EntrepriseService {
         return rh;
     }
 
+    @Transactional(readOnly = true)
     public Entreprise trouverParId(Long id) {
         return entrepriseRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Entreprise introuvable : " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Entreprise", id));
     }
 
     @Transactional

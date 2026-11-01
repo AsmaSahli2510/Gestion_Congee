@@ -8,21 +8,33 @@ import gestionconges.entity.Utilisateur;
 import gestionconges.enums.Role;
 import gestionconges.enums.StatutConge;
 import gestionconges.enums.TypeConge;
+import gestionconges.exception.BusinessRuleException;
+import gestionconges.exception.ResourceNotFoundException;
 import gestionconges.repository.DemandeCongeRepository;
 import gestionconges.repository.MouvementSoldeRepository;
 import gestionconges.repository.SoldeCongeRepository;
 import gestionconges.repository.UtilisateurRepository;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.Year;
 import java.util.List;
 
 @Service
 public class DemandeCongeService {
+
+    private static final Logger log = LoggerFactory.getLogger(DemandeCongeService.class);
+
+    @Value("${spring.application.name:gestion-conges}")
+    private String applicationName;
 
     private final DemandeCongeRepository demandeRepository;
     private final SoldeCongeRepository soldeRepository;
@@ -31,13 +43,14 @@ public class DemandeCongeService {
     private final NotificationService notificationService;
     private final SoldeCongeService soldeCongeService;
 
+    @Autowired
     public DemandeCongeService(
-            DemandeCongeRepository demandeRepository,
-            SoldeCongeRepository soldeRepository,
-            MouvementSoldeRepository mouvementSoldeRepository,
-            UtilisateurRepository utilisateurRepository,
-            NotificationService notificationService,
-            SoldeCongeService soldeCongeService) {
+            @Autowired DemandeCongeRepository demandeRepository,
+            @Autowired SoldeCongeRepository soldeRepository,
+            @Autowired MouvementSoldeRepository mouvementSoldeRepository,
+            @Autowired UtilisateurRepository utilisateurRepository,
+            @Autowired NotificationService notificationService,
+            @Autowired SoldeCongeService soldeCongeService) {
         this.demandeRepository = demandeRepository;
         this.soldeRepository = soldeRepository;
         this.mouvementSoldeRepository = mouvementSoldeRepository;
@@ -46,41 +59,60 @@ public class DemandeCongeService {
         this.soldeCongeService = soldeCongeService;
     }
 
+    @PostConstruct
+    public void init() {
+        log.info("DemandeCongeService initialisé avec succès pour l'application [{}]", applicationName);
+    }
+
+    @PreDestroy
+    public void cleanup() {
+        log.info("Arrêt de DemandeCongeService - Libération des ressources");
+    }
+
     private static final List<StatutConge> STATUTS_EN_ATTENTE = List.of(StatutConge.SOUMISE, StatutConge.EN_ATTENTE);
 
+    @Transactional(readOnly = true)
     public List<DemandeConge> getToutesLesDemandes() {
         return demandeRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public List<DemandeConge> getDemandesEnAttente() {
         return demandeRepository.findByStatutIn(STATUTS_EN_ATTENTE);
     }
 
+    @Transactional(readOnly = true)
     public List<DemandeConge> getDemandesParUtilisateur(Long utilisateurId) {
         return demandeRepository.findByUtilisateur_IdOrderByDateCreationDesc(utilisateurId);
     }
 
+    @Transactional(readOnly = true)
     public List<DemandeConge> getDemandesEntreprise(Long entrepriseId) {
         return demandeRepository.findByEntreprise_IdOrderByDateCreationDesc(entrepriseId);
     }
 
+    @Transactional(readOnly = true)
     public List<DemandeConge> getDemandesEnAttenteEntreprise(Long entrepriseId) {
         return demandeRepository.findByEntreprise_IdAndStatutInOrderByDateCreationDesc(entrepriseId, STATUTS_EN_ATTENTE);
     }
 
+    @Transactional(readOnly = true)
     public List<DemandeConge> getDemandesEquipe(Long equipeId) {
         return demandeRepository.findByUtilisateur_Equipe_IdOrderByDateCreationDesc(equipeId);
     }
 
+    @Transactional(readOnly = true)
     public List<DemandeConge> getDemandesEnAttenteEquipe(Long equipeId) {
         return demandeRepository.findByUtilisateur_Equipe_IdAndStatutInOrderByDateCreationDesc(equipeId, STATUTS_EN_ATTENTE);
     }
 
+    @Transactional(readOnly = true)
     public DemandeConge trouverDemande(Long id) {
         return demandeRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Demande de congé introuvable : " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Demande de congé introuvable : " + id));
     }
 
+    @Transactional(readOnly = true)
     public DemandeConge trouverDemandeParEntreprise(Long id, Long entrepriseId) {
         return demandeRepository.findByIdAndEntreprise_Id(id, entrepriseId)
                 .orElseThrow(() -> new IllegalArgumentException("Demande introuvable ou accès non autorisé"));

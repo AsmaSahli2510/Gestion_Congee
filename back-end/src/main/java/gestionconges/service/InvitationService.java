@@ -8,12 +8,15 @@ import gestionconges.entity.SoldeConge;
 import gestionconges.entity.Utilisateur;
 import gestionconges.enums.Role;
 import gestionconges.enums.StatutUtilisateur;
+import gestionconges.exception.ResourceNotFoundException;
 import gestionconges.repository.EntrepriseRepository;
 import gestionconges.repository.EquipeRepository;
 import gestionconges.repository.InvitationRepository;
 import gestionconges.repository.MouvementSoldeRepository;
 import gestionconges.repository.SoldeCongeRepository;
 import gestionconges.repository.UtilisateurRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +29,9 @@ import java.util.UUID;
 @Service
 public class InvitationService {
 
+    @Value("${leaveflow.invitation.validite-jours:7}")
+    private int validiteJours;
+
     private final InvitationRepository invitationRepository;
     private final EntrepriseRepository entrepriseRepository;
     private final EquipeRepository equipeRepository;
@@ -35,14 +41,16 @@ public class InvitationService {
     private final PasswordEncoder passwordEncoder;
     private final NotificationService notificationService;
 
-    public InvitationService(InvitationRepository invitationRepository,
-                             EntrepriseRepository entrepriseRepository,
-                             EquipeRepository equipeRepository,
-                             UtilisateurRepository utilisateurRepository,
-                             SoldeCongeRepository soldeCongeRepository,
-                             MouvementSoldeRepository mouvementSoldeRepository,
-                             PasswordEncoder passwordEncoder,
-                             NotificationService notificationService) {
+    @Autowired
+    public InvitationService(
+            @Autowired InvitationRepository invitationRepository,
+            @Autowired EntrepriseRepository entrepriseRepository,
+            @Autowired EquipeRepository equipeRepository,
+            @Autowired UtilisateurRepository utilisateurRepository,
+            @Autowired SoldeCongeRepository soldeCongeRepository,
+            @Autowired MouvementSoldeRepository mouvementSoldeRepository,
+            @Autowired PasswordEncoder passwordEncoder,
+            @Autowired NotificationService notificationService) {
         this.invitationRepository = invitationRepository;
         this.entrepriseRepository = entrepriseRepository;
         this.equipeRepository = equipeRepository;
@@ -66,7 +74,7 @@ public class InvitationService {
         }
 
         Entreprise entreprise = entrepriseRepository.findById(entrepriseId)
-                .orElseThrow(() -> new IllegalArgumentException("Entreprise introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Entreprise", entrepriseId));
 
         Equipe equipe = null;
         if (equipeId != null && equipeId > 0) {
@@ -80,17 +88,19 @@ public class InvitationService {
         invitation.setEquipe(equipe);
         invitation.setPoste(poste);
         invitation.setToken(UUID.randomUUID().toString());
-        invitation.setDateExpiration(LocalDateTime.now().plusDays(7)); // Validité 7 jours
+        invitation.setDateExpiration(LocalDateTime.now().plusDays(validiteJours > 0 ? validiteJours : 7));
         invitation.setUtilisee(false);
         invitation.setDateCreation(LocalDateTime.now());
 
         return invitationRepository.save(invitation);
     }
 
+    @Transactional(readOnly = true)
     public List<Invitation> getInvitations(Long entrepriseId) {
         return invitationRepository.findByEntreprise_IdOrderByDateCreationDesc(entrepriseId);
     }
 
+    @Transactional(readOnly = true)
     public Invitation trouverParToken(String token) {
         Invitation invitation = invitationRepository.findByToken(token)
                 .orElseThrow(() -> new IllegalArgumentException("Invitation introuvable ou lien invalide."));

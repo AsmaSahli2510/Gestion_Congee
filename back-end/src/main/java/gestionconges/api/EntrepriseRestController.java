@@ -5,6 +5,7 @@ import gestionconges.entity.Utilisateur;
 import gestionconges.enums.Role;
 import gestionconges.repository.UtilisateurRepository;
 import gestionconges.service.EntrepriseService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,15 +15,11 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/entreprise")
+@CrossOrigin(origins = "*")
 public class EntrepriseRestController {
 
-    private final EntrepriseService entrepriseService;
-    private final UtilisateurRepository utilisateurRepository;
-
-    public EntrepriseRestController(EntrepriseService entrepriseService, UtilisateurRepository utilisateurRepository) {
-        this.entrepriseService = entrepriseService;
-        this.utilisateurRepository = utilisateurRepository;
-    }
+    @Autowired private EntrepriseService entrepriseService;
+    @Autowired private UtilisateurRepository utilisateurRepository;
 
     private Utilisateur getUtilisateurConnecte(Principal principal) {
         if (principal == null) {
@@ -63,15 +60,11 @@ public class EntrepriseRestController {
             } catch (Exception ignored) {}
         }
 
-        try {
-            Entreprise miseAJour = entrepriseService.mettreAJourEntreprise(user.getEntreprise().getId(), nom, secteur, description, jours);
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Informations de l'entreprise mises à jour",
-                    "entreprise", miseAJour
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
+        Entreprise miseAJour = entrepriseService.mettreAJourEntreprise(user.getEntreprise().getId(), nom, secteur, description, jours);
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Informations de l'entreprise mises à jour",
+                "entreprise", miseAJour
+        ));
     }
 }

@@ -1,10 +1,13 @@
 package gestionconges.api;
 
+import gestionconges.dto.EquipeRequest;
 import gestionconges.entity.Equipe;
 import gestionconges.entity.Utilisateur;
 import gestionconges.enums.Role;
 import gestionconges.repository.UtilisateurRepository;
 import gestionconges.service.EquipeService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,15 +18,11 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/equipes")
+@CrossOrigin(origins = "*")
 public class EquipeRestController {
 
-    private final EquipeService equipeService;
-    private final UtilisateurRepository utilisateurRepository;
-
-    public EquipeRestController(EquipeService equipeService, UtilisateurRepository utilisateurRepository) {
-        this.equipeService = equipeService;
-        this.utilisateurRepository = utilisateurRepository;
-    }
+   @Autowired private EquipeService equipeService;
+    @Autowired private UtilisateurRepository utilisateurRepository;
 
     private Utilisateur getUtilisateurConnecte(Principal principal) {
         if (principal == null) {
@@ -43,81 +42,55 @@ public class EquipeRestController {
     }
 
     @PostMapping
-    public ResponseEntity<?> creerEquipe(@RequestBody Map<String, Object> body, Principal principal) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<?> creerEquipe(@Valid @RequestBody EquipeRequest request, Principal principal) {
         Utilisateur user = getUtilisateurConnecte(principal);
         if (user.getRole() != Role.RH || user.getEntreprise() == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "Seul le RH peut créer une équipe"));
         }
 
-        String nom = (String) body.get("nom");
-        if (nom == null || nom.isBlank()) {
-            nom = (String) body.get("name");
-        }
-        if (nom == null || nom.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Le nom de l'équipe est obligatoire"));
-        }
-
-        String description = (String) body.get("description");
-        Long managerId = null;
-        if (body.get("managerId") != null) {
-            managerId = Long.valueOf(body.get("managerId").toString());
-        } else if (body.get("manager") != null) {
-            try {
-                managerId = Long.valueOf(body.get("manager").toString());
-            } catch (Exception ignored) {}
-        }
-
-        try {
-            Equipe cree = equipeService.creerEquipe(user.getEntreprise().getId(), nom, description, managerId);
-            return ResponseEntity.status(HttpStatus.CREATED).body(cree);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
+        Equipe cree = equipeService.creerEquipe(
+                user.getEntreprise().getId(),
+                request.getNom(),
+                request.getDescription(),
+                request.getManagerId()
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(cree);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> modifierEquipe(@PathVariable Long id, @RequestBody Map<String, Object> body, Principal principal) {
+    public ResponseEntity<?> modifierEquipe(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody EquipeRequest request,
+            Principal principal) {
+
         Utilisateur user = getUtilisateurConnecte(principal);
         if (user.getRole() != Role.RH || user.getEntreprise() == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "Seul le RH peut modifier une équipe"));
         }
 
-        String nom = (String) (body.get("nom") != null ? body.get("nom") : body.get("name"));
-        if (nom == null || nom.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Le nom de l'équipe est obligatoire"));
-        }
-
-        String description = (String) body.get("description");
-        Long managerId = null;
-        if (body.get("managerId") != null) {
-            managerId = Long.valueOf(body.get("managerId").toString());
-        }
-
-        boolean active = body.get("active") != null ? Boolean.parseBoolean(body.get("active").toString()) : true;
-
-        try {
-            Equipe modifiee = equipeService.modifierEquipe(id, user.getEntreprise().getId(), nom, description, managerId, active);
-            return ResponseEntity.ok(modifiee);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
+        Equipe modifiee = equipeService.modifierEquipe(
+                id,
+                user.getEntreprise().getId(),
+                request.getNom(),
+                request.getDescription(),
+                request.getManagerId(),
+                Boolean.TRUE.equals(request.getActive())
+        );
+        return ResponseEntity.ok(modifiee);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> supprimerEquipe(@PathVariable Long id, Principal principal) {
+    public ResponseEntity<?> supprimerEquipe(@PathVariable("id") Long id, Principal principal) {
         Utilisateur user = getUtilisateurConnecte(principal);
         if (user.getRole() != Role.RH || user.getEntreprise() == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "Seul le RH peut supprimer une équipe"));
         }
 
-        try {
-            equipeService.supprimerEquipe(id, user.getEntreprise().getId());
-            return ResponseEntity.ok(Map.of("success", true, "message", "Équipe supprimée avec succès"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
+        equipeService.supprimerEquipe(id, user.getEntreprise().getId());
+        return ResponseEntity.ok(Map.of("success", true, "message", "Équipe supprimée avec succès"));
     }
 }

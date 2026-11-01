@@ -3,6 +3,8 @@ package gestionconges.repository;
 import gestionconges.entity.SoldeConge;
 import gestionconges.entity.Utilisateur;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -22,4 +24,10 @@ public interface SoldeCongeRepository extends JpaRepository<SoldeConge, Long> {
     List<SoldeConge> findByUtilisateur_Equipe_IdAndAnnee(Long equipeId, Integer annee);
 
     Optional<SoldeConge> findByIdAndEntreprise_Id(Long id, Long entrepriseId);
+
+    @Query("SELECT s FROM SoldeConge s WHERE s.utilisateur.id = :utilisateurId AND s.annee = :annee")
+    Optional<SoldeConge> findSoldeByUtilisateurEtAnnee(
+            @Param("utilisateurId") Long utilisateurId,
+            @Param("annee") Integer annee
+    );
 }

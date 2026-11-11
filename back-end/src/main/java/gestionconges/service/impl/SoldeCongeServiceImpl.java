@@ -7,7 +7,6 @@ import gestionconges.entity.MouvementSolde;
 import gestionconges.entity.SoldeConge;
 import gestionconges.entity.Utilisateur;
 import gestionconges.exception.ResourceNotFoundException;
-import gestionconges.repository.EntrepriseRepository;
 import gestionconges.repository.MouvementSoldeRepository;
 import gestionconges.repository.SoldeCongeRepository;
 import gestionconges.repository.UtilisateurRepository;
@@ -32,11 +31,14 @@ public class SoldeCongeServiceImpl implements SoldeCongeService {
     @Value("${leaveflow.conges.jours-par-defaut:30}")
     private int defaultJoursConges;
 
-    @Autowired private SoldeCongeRepository soldeCongeRepository;
-    @Autowired private MouvementSoldeRepository mouvementSoldeRepository;
-    @Autowired private UtilisateurRepository utilisateurRepository;
-    @Autowired private NotificationService notificationService;
-
+    @Autowired
+    private SoldeCongeRepository soldeCongeRepository;
+    @Autowired
+    private MouvementSoldeRepository mouvementSoldeRepository;
+    @Autowired
+    private UtilisateurRepository utilisateurRepository;
+    @Autowired
+    private NotificationService notificationService;
 
     @PostConstruct
     public void init() {
@@ -76,8 +78,7 @@ public class SoldeCongeServiceImpl implements SoldeCongeService {
                     utilisateur,
                     joursParDefaut,
                     "Attribution annuelle automatique pour l'année " + annee,
-                    utilisateur
-            );
+                    utilisateur);
             mouvementSoldeRepository.save(mouvement);
         }
 
@@ -116,7 +117,8 @@ public class SoldeCongeServiceImpl implements SoldeCongeService {
 
     @Transactional
     @Override
-    public SoldeConge ajusterSolde(Long soldeId, Long entrepriseId, Integer variation, String raison, Utilisateur auteur) {
+    public SoldeConge ajusterSolde(Long soldeId, Long entrepriseId, Integer variation, String raison,
+            Utilisateur auteur) {
         SoldeConge solde = soldeCongeRepository.findByIdAndEntreprise_Id(soldeId, entrepriseId)
                 .orElseThrow(() -> new IllegalArgumentException("Solde introuvable ou non autorisé"));
 
@@ -131,8 +133,7 @@ public class SoldeCongeServiceImpl implements SoldeCongeService {
                 solde.getUtilisateur(),
                 variation,
                 (raison != null && !raison.isBlank()) ? raison.trim() : "Ajustement exceptionnel par RH",
-                auteur
-        );
+                auteur);
         mouvementSoldeRepository.save(mouvement);
 
         // Notification envoyée au collaborateur
@@ -142,8 +143,7 @@ public class SoldeCongeServiceImpl implements SoldeCongeService {
                 "Ajustement de solde de congé",
                 String.format("Votre solde pour l'année %d a été ajusté de %+d jours par %s. Raison : %s",
                         solde.getAnnee(), variation, auteur.getNomComplet(), raison),
-                "/employe/solde"
-        );
+                "/employe/solde");
 
         return solde;
     }

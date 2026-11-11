@@ -1,6 +1,5 @@
 package gestionconges.controller;
 
-import gestionconges.enums.StatutConge;
 import gestionconges.enums.TypeConge;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -1,4 +1,4 @@
-package gestionconges.api;
+package gestionconges.controller;
 
 import gestionconges.dto.InvitationRequest;
 import gestionconges.entity.Invitation;
@@ -51,10 +51,10 @@ public class InvitationRestController {
 
         Invitation inv = invitationService.creerInvitation(
                 user.getEntreprise().getId(),
-                request.getEmail(),
-                request.getRole(),
-                request.getEquipeId(),
-                request.getPoste()
+                request.email(),
+                request.role(),
+                request.equipeId(),
+                request.poste()
         );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(

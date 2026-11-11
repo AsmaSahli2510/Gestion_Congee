@@ -1,4 +1,4 @@
-package gestionconges.api;
+package gestionconges.controller;
 
 import gestionconges.dto.ProfilUpdateRequest;
 import gestionconges.entity.Equipe;
@@ -112,12 +112,12 @@ public class UtilisateurRestController {
     public ResponseEntity<?> modifierProfil(@RequestBody ProfilUpdateRequest body, Principal principal) {
         Utilisateur user = getUtilisateurConnecte(principal);
 
-        if (body.getNom() != null && !body.getNom().isBlank()) user.setNom(body.getNom().trim());
-        if (body.getPrenom() != null && !body.getPrenom().isBlank()) user.setPrenom(body.getPrenom().trim());
-        if (body.getTelephone() != null) user.setTelephone(body.getTelephone().trim());
+        if (body.nom() != null && !body.nom().isBlank()) user.setNom(body.nom().trim());
+        if (body.prenom() != null && !body.prenom().isBlank()) user.setPrenom(body.prenom().trim());
+        if (body.telephone() != null) user.setTelephone(body.telephone().trim());
 
-        String nouveauMotDePasse = body.getNouveauMotDePasse();
-        String ancienMotDePasse = body.getAncienMotDePasse();
+        String nouveauMotDePasse = body.nouveauMotDePasse();
+        String ancienMotDePasse = body.ancienMotDePasse();
 
         if (nouveauMotDePasse != null && !nouveauMotDePasse.isBlank()) {
             if (ancienMotDePasse == null || !passwordEncoder.matches(ancienMotDePasse, user.getMotDePasse())) {

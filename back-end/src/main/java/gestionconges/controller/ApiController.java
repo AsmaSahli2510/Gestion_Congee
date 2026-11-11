@@ -1,4 +1,4 @@
-package gestionconges.api;
+package gestionconges.controller;
 
 import gestionconges.enums.StatutConge;
 import gestionconges.enums.TypeConge;

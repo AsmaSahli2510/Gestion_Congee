@@ -1,24 +1,13 @@
 package gestionconges.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonCreator;
 
-public class RefusDemandeRequest {
-
-    @JsonAlias({"motifRejet", "comment", "commentaire"})
-    private String motifRejet;
-
-    public RefusDemandeRequest() {
-    }
-
-    public RefusDemandeRequest(String motifRejet) {
-        this.motifRejet = motifRejet;
-    }
-
-    public String getMotifRejet() {
-        return motifRejet;
-    }
-
-    public void setMotifRejet(String motifRejet) {
-        this.motifRejet = motifRejet;
+public record RefusDemandeRequest(
+        @JsonAlias({"motifRejet", "comment", "commentaire"})
+        String motifRejet
+) {
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+    public RefusDemandeRequest {
     }
 }

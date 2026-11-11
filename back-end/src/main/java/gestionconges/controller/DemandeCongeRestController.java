@@ -1,4 +1,4 @@
-package gestionconges.api;
+package gestionconges.controller;
 
 import gestionconges.dto.DemandeCongeRequest;
 import gestionconges.dto.RefusDemandeRequest;
@@ -131,11 +131,11 @@ public class DemandeCongeRestController {
         Utilisateur utilisateur = getUtilisateurConnecte(principal);
 
         DemandeConge demande = new DemandeConge();
-        demande.setDateDebut(dto.getDateDebut());
-        demande.setDateFin(dto.getDateFin());
+        demande.setDateDebut(dto.dateDebut());
+        demande.setDateFin(dto.dateFin());
         demande.setTypeConge(dto.resolveTypeConge());
-        demande.setMotif(dto.getMotif());
-        demande.setJustificatif(dto.getJustificatif());
+        demande.setMotif(dto.motif());
+        demande.setJustificatif(dto.justificatif());
 
         DemandeConge cree = demandeCongeService.creerDemande(demande, utilisateur);
         return ResponseEntity.status(HttpStatus.CREATED).body(cree);
@@ -149,15 +149,15 @@ public class DemandeCongeRestController {
             Principal principal) {
 
         Utilisateur utilisateur = getUtilisateurConnecte(principal);
-        TypeConge type = dto.getTypeConge() != null ? dto.resolveTypeConge() : null;
+        TypeConge type = dto.typeConge() != null ? dto.resolveTypeConge() : null;
 
         DemandeConge modifiee = demandeCongeService.modifierDemande(
                 id,
-                dto.getDateDebut(),
-                dto.getDateFin(),
+                dto.dateDebut(),
+                dto.dateFin(),
                 type,
-                dto.getMotif(),
-                dto.getJustificatif(),
+                dto.motif(),
+                dto.justificatif(),
                 utilisateur.getId());
         return ResponseEntity.ok(modifiee);
     }
@@ -203,7 +203,7 @@ public class DemandeCongeRestController {
             Principal principal) {
 
         Utilisateur valideur = getUtilisateurConnecte(principal);
-        String motif = body != null ? body.getMotifRejet() : null;
+        String motif = body != null ? body.motifRejet() : null;
 
         DemandeConge rejetee = demandeCongeService.refuserDemande(id, valideur, motif);
         return ResponseEntity.ok(Map.of(

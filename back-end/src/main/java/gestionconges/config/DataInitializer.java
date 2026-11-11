@@ -2,9 +2,7 @@ package gestionconges.config;
 
 import gestionconges.entity.*;
 import gestionconges.enums.Role;
-import gestionconges.enums.StatutConge;
 import gestionconges.enums.StatutUtilisateur;
-import gestionconges.enums.TypeConge;
 import gestionconges.repository.*;
 import gestionconges.service.DemandeCongeService;
 import org.springframework.boot.CommandLineRunner;
@@ -12,8 +10,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.List;
 
@@ -31,13 +27,13 @@ public class DataInitializer implements CommandLineRunner {
 
     @org.springframework.beans.factory.annotation.Autowired
     public DataInitializer(EntrepriseRepository entrepriseRepository,
-                           EquipeRepository equipeRepository,
-                           UtilisateurRepository utilisateurRepository,
-                           DemandeCongeRepository demandeRepository,
-                           SoldeCongeRepository soldeRepository,
-                           MouvementSoldeRepository mouvementSoldeRepository,
-                           PasswordEncoder passwordEncoder,
-                           DemandeCongeService demandeCongeService) {
+            EquipeRepository equipeRepository,
+            UtilisateurRepository utilisateurRepository,
+            DemandeCongeRepository demandeRepository,
+            SoldeCongeRepository soldeRepository,
+            MouvementSoldeRepository mouvementSoldeRepository,
+            PasswordEncoder passwordEncoder,
+            DemandeCongeService demandeCongeService) {
         this.entrepriseRepository = entrepriseRepository;
         this.equipeRepository = equipeRepository;
         this.utilisateurRepository = utilisateurRepository;
@@ -56,7 +52,8 @@ public class DataInitializer implements CommandLineRunner {
                 .orElseGet(() -> {
                     Entreprise ent = new Entreprise("LeaveFlow Tech", "LEAVEFLOW-01");
                     ent.setSecteur("Technologie & Services Numériques");
-                    ent.setDescription("Entreprise de démonstration pour la plateforme de gestion des congés LeaveFlow");
+                    ent.setDescription(
+                            "Entreprise de démonstration pour la plateforme de gestion des congés LeaveFlow");
                     ent.setJoursCongesAnnuels(30);
                     return entrepriseRepository.save(ent);
                 });
@@ -69,7 +66,8 @@ public class DataInitializer implements CommandLineRunner {
                     return equipeRepository.save(eq);
                 });
 
-        // 3. Associer les utilisateurs existants sans entreprise et vérifier les comptes démo
+        // 3. Associer les utilisateurs existants sans entreprise et vérifier les
+        // comptes démo
         List<Utilisateur> tous = utilisateurRepository.findAll();
         for (Utilisateur u : tous) {
             boolean modified = false;
@@ -86,9 +84,12 @@ public class DataInitializer implements CommandLineRunner {
                 modified = true;
             }
             if (u.getPoste() == null) {
-                if (u.getRole() == Role.RH) u.setPoste("Responsable RH");
-                else if (u.getRole() == Role.MANAGER) u.setPoste("Engineering Manager");
-                else u.setPoste("Ingénieur Logiciel");
+                if (u.getRole() == Role.RH)
+                    u.setPoste("Responsable RH");
+                else if (u.getRole() == Role.MANAGER)
+                    u.setPoste("Engineering Manager");
+                else
+                    u.setPoste("Ingénieur Logiciel");
                 modified = true;
             }
             if (modified) {
@@ -96,7 +97,8 @@ public class DataInitializer implements CommandLineRunner {
             }
         }
 
-        // Créer ou mettre à jour les comptes démo pour garantir l'accès avec "postgress"
+        // Créer ou mettre à jour les comptes démo pour garantir l'accès avec
+        // "postgress"
         Utilisateur rh = utilisateurRepository.findByEmail("test@rh.com").orElseGet(() -> {
             Utilisateur u = new Utilisateur();
             u.setEmail("test@rh.com");
@@ -158,13 +160,13 @@ public class DataInitializer implements CommandLineRunner {
                         u,
                         30,
                         "Initialisation annuelle des congés 2026",
-                        rh
-                );
+                        rh);
                 mouvementSoldeRepository.save(mouv);
             }
         }
 
-        // 5. Initialiser les comptes de démonstration LeaveFlow (conformité Cahier des charges et frontend)
+        // 5. Initialiser les comptes de démonstration LeaveFlow (conformité Cahier des
+        // charges et frontend)
         Equipe equipeProduit = equipeRepository.findByEntreprise_Id(entreprise.getId()).stream()
                 .filter(e -> "Produit".equalsIgnoreCase(e.getNom()) || e.getNom().contains("Produit"))
                 .findFirst().orElseGet(() -> {
@@ -241,7 +243,8 @@ public class DataInitializer implements CommandLineRunner {
             }
         }
 
-        // 6. Rattacher les demandes orphelines à l'entreprise et calculer les jours ouvrables
+        // 6. Rattacher les demandes orphelines à l'entreprise et calculer les jours
+        // ouvrables
         List<DemandeConge> demandes = demandeRepository.findAll();
         for (DemandeConge d : demandes) {
             boolean mod = false;

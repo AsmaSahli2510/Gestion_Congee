@@ -1,4 +1,4 @@
-package gestionconges.api;
+package gestionconges.controller;
 
 import gestionconges.dto.AjustementSoldeRequest;
 import gestionconges.entity.Equipe;
@@ -112,10 +112,10 @@ public class SoldeRestController {
                     .body(Map.of("message", "Accès réservé aux administrateurs RH"));
         }
 
-        Long soldeId = request.getSoldeId();
-        if (soldeId == null && request.getUserId() != null) {
+        Long soldeId = request.soldeId();
+        if (soldeId == null && request.userId() != null) {
             int annee = Year.now().getValue();
-            SoldeConge sc = soldeCongeService.getOuCreerSolde(request.getUserId(), annee);
+            SoldeConge sc = soldeCongeService.getOuCreerSolde(request.userId(), annee);
             soldeId = sc.getId();
         }
 
@@ -126,8 +126,8 @@ public class SoldeRestController {
         SoldeConge soldeAjuste = soldeCongeService.ajusterSolde(
                 soldeId,
                 user.getEntreprise().getId(),
-                request.getVariation(),
-                request.getRaison(),
+                request.variation(),
+                request.raison(),
                 user
         );
 

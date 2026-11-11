@@ -1,4 +1,4 @@
-package gestionconges.api;
+package gestionconges.controller;
 
 import gestionconges.entity.Notification;
 import gestionconges.entity.Utilisateur;

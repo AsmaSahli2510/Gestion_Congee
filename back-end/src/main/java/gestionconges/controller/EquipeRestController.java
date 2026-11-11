@@ -1,9 +1,10 @@
-package gestionconges.api;
+package gestionconges.controller;
 
 import gestionconges.dto.EquipeRequest;
 import gestionconges.entity.Equipe;
 import gestionconges.entity.Utilisateur;
 import gestionconges.enums.Role;
+import gestionconges.exception.ResourceNotFoundException;
 import gestionconges.repository.UtilisateurRepository;
 import gestionconges.service.EquipeService;
 import jakarta.validation.Valid;
@@ -41,6 +42,15 @@ public class EquipeRestController {
         return ResponseEntity.ok(equipeService.getEquipes(user.getEntreprise().getId()));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Equipe> getEquipe(@PathVariable("id") Long id, Principal principal) {
+        Utilisateur user = getUtilisateurConnecte(principal);
+        if (user.getEntreprise() == null) {
+            throw new ResourceNotFoundException("Équipe", id);
+        }
+        return ResponseEntity.ok(equipeService.trouverParIdEtEntreprise(id, user.getEntreprise().getId()));
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<?> creerEquipe(@Valid @RequestBody EquipeRequest request, Principal principal) {
@@ -52,9 +62,9 @@ public class EquipeRestController {
 
         Equipe cree = equipeService.creerEquipe(
                 user.getEntreprise().getId(),
-                request.getNom(),
-                request.getDescription(),
-                request.getManagerId()
+                request.nom(),
+                request.description(),
+                request.managerId()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(cree);
     }
@@ -74,10 +84,10 @@ public class EquipeRestController {
         Equipe modifiee = equipeService.modifierEquipe(
                 id,
                 user.getEntreprise().getId(),
-                request.getNom(),
-                request.getDescription(),
-                request.getManagerId(),
-                Boolean.TRUE.equals(request.getActive())
+                request.nom(),
+                request.description(),
+                request.managerId(),
+                Boolean.TRUE.equals(request.active())
         );
         return ResponseEntity.ok(modifiee);
     }

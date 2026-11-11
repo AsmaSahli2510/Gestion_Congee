@@ -1,4 +1,4 @@
-package gestionconges.api;
+package gestionconges.controller;
 
 import gestionconges.dto.ActivationCompteRequest;
 import gestionconges.dto.LoginRequest;
@@ -48,8 +48,8 @@ public class AuthRestController {
             @CookieValue(value = "JSESSIONID", required = false) String sessionId,
             HttpServletRequest request) {
 
-        String email = loginRequest.getEmail();
-        String password = loginRequest.getPassword();
+        String email = loginRequest.email();
+        String password = loginRequest.password();
 
         try {
             Authentication authentication = authenticationManager.authenticate(
@@ -124,11 +124,11 @@ public class AuthRestController {
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<?> creerEntreprise(@Valid @RequestBody RegisterRequest registerRequest) {
         Utilisateur rh = entrepriseService.creerNouvelleEntrepriseEtRh(
-                registerRequest.getNomEntreprise(),
-                registerRequest.getNomRh(),
-                registerRequest.getPrenomRh(),
-                registerRequest.getEmailRh(),
-                registerRequest.getMotDePasse()
+                registerRequest.nomEntreprise(),
+                registerRequest.nomRh(),
+                registerRequest.prenomRh(),
+                registerRequest.emailRh(),
+                registerRequest.motDePasse()
         );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
@@ -155,10 +155,10 @@ public class AuthRestController {
     @PostMapping("/activer-invitation")
     public ResponseEntity<?> activerInvitation(@Valid @RequestBody ActivationCompteRequest request) {
         Utilisateur user = invitationService.activerCompte(
-                request.getToken(),
-                request.getNom(),
-                request.getPrenom(),
-                request.getMotDePasse()
+                request.token(),
+                request.nom(),
+                request.prenom(),
+                request.motDePasse()
         );
         return ResponseEntity.ok(Map.of(
                 "success", true,

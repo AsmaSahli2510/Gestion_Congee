@@ -1,4 +1,3 @@
-
 package gestionconges.config;
 
 import gestionconges.service.CustomUserDetailsService;
@@ -75,6 +74,9 @@ public class SecurityConfig {
                                 "/invitations/**",
                                 "/mot-de-passe-oublie",
                                 "/error",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
                                 "/api/auth/**",
                                 "/api/test",
                                 "/api/invitations/verifier")

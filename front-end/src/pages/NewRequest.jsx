@@ -1,1 +1,41 @@
-import React,{useState} from 'react';import {useNavigate,useParams} from 'react-router-dom';import {CalendarDays,ArrowLeft} from 'lucide-react';import {useApp,workdays} from '../context/AppContext';import {Heading} from '../components/UI';export default function NewRequest(){const {db,user,update,notify}=useApp();const {id}=useParams();const existing=db.requests.find(r=>r.id===Number(id)&&r.userId===user.id);const nav=useNavigate();const [start,setStart]=useState(existing?.start||''),[end,setEnd]=useState(existing?.end||''),[type,setType]=useState(existing?.type||db.types[0]?.name||''),[error,setError]=useState('');const days=start&&end?workdays(start,end):0;function submit(e){e.preventDefault();if(existing&&existing.status!=='SOUMISE')return setError('Cette demande ne peut plus être modifiée.');if(end<start||days<1)return setError('Choisissez une période valide contenant au moins un jour ouvré.');if(db.types.find(t=>t.name===type)?.deduct&&days>user.balance)return setError('Votre solde est insuffisant.');if(db.requests.some(r=>r.userId===user.id&&r.id!==existing?.id&&['SOUMISE','APPROUVÉE'].includes(r.status)&&r.start<=end&&r.end>=start))return setError('Cette période chevauche une autre demande.');const f=new FormData(e.target);update(d=>{const data={id:existing?.id||Date.now(),userId:user.id,type,start,end,days,reason:f.get('reason'),attachment:f.get('attachment')?.name||'',status:'SOUMISE',comment:'',created:new Date().toISOString().slice(0,10)};if(existing)d.requests=d.requests.map(r=>r.id===existing.id?data:r);else d.requests.push(data);d.users.filter(u=>(user.role==='employe'?u.role==='manager'&&u.team===user.team:u.role==='rh')&&u.id!==user.id).forEach(u=>d.notifications.push({id:Date.now()+u.id,userId:u.id,text:user.name+' a soumis une demande de '+days+' jours.',read:false}))});notify('Demande enregistrée.');nav('/'+user.role+'/demandes')}return <><Heading title={existing?'Modifier ma demande':'Votre prochaine pause commence ici.'} sub="Choisissez vos dates. Nous nous occupons du suivi."/><div className="form-grid"><section className="panel"><form onSubmit={submit}><div className="section-head"><h2>Détails de la demande</h2><CalendarDays color="#006ee9"/></div><label>Type de congé</label><select value={type} onChange={e=>setType(e.target.value)} required>{db.types.map(t=><option key={t.id}>{t.name}</option>)}</select><div className="two-fields"><div><label>Date de début</label><input type="date" value={start} onChange={e=>setStart(e.target.value)} required/></div><div><label>Date de fin</label><input type="date" value={end} onChange={e=>setEnd(e.target.value)} min={start} required/></div></div><label>Motif</label><textarea name="reason" defaultValue={existing?.reason} placeholder="Quelques mots pour accompagner votre demande…"/><label>Justificatif facultatif</label><input name="attachment" type="file" accept=".pdf,.png,.jpg,.jpeg"/><p className="muted">Le prototype conserve uniquement le nom du fichier, pas son contenu.</p>{error&&<p className="error" role="alert">{error}</p>}<div className="form-actions"><button type="button" className="btn secondary" onClick={()=>nav(-1)}>Annuler</button><button className="btn">Soumettre ma demande →</button></div></form></section><aside className="summary-card"><span className="eyebrow">VOTRE DEMANDE EN UN REGARD</span><div className="summary-days">{Math.max(0,days)}<small>jours ouvrés</small></div><div className="summary-row"><span>Solde actuel</span><b>{user.balance} j</b></div><div className="summary-row"><span>Solde après validation</span><b>{user.balance-(db.types.find(t=>t.name===type)?.deduct?Math.max(0,days):0)} j</b></div><p>Les samedis et dimanches sont exclus. Les jours fériés ne sont pas configurés dans cette démonstration.</p><div className="note">{user.role==='employe'?'Votre manager examinera la demande.':'Votre demande doit être validée par un autre RH habilité.'} Le solde est débité après approbation.</div></aside></div></>}
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { CalendarDays } from 'lucide-react';
+import { useApp, workdays } from '../context/AppContext';
+import { send } from '../services/api';
+import { Heading } from '../components/UI';
+export default function NewRequest() {
+  const { db, user, run } = useApp(); const { id } = useParams(); const nav = useNavigate();
+  const existing = db.mine.find(r => r.id === Number(id));
+  const [start, setStart] = useState(''); const [end, setEnd] = useState(''); const [type, setType] = useState('Congés payés'); const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
+  useEffect(() => { if(existing) { setStart(existing.start); setEnd(existing.end); setType(existing.type); } }, [existing?.id]);
+  const days = workdays(start, end); const deduct = db.types.find(t => t.name === type)?.deduct;
+  async function submit(e) {
+    e.preventDefault(); setError('');
+    if (id && !existing) return setError('Demande introuvable ou inaccessible.');
+    if (existing && existing.status !== 'SOUMISE') return setError('Seules les demandes en attente sont modifiables.');
+    if (days < 1) return setError('Choisissez une période valide avec au moins un jour ouvré.');
+    if (deduct && days > user.balance) return setError('Solde insuffisant.');
+    const f = new FormData(e.target); const file = f.get('attachment');
+    const payload = { dateDebut: start, dateFin: end, typeConge: type, motif: f.get('reason') || '', justificatif: file?.name || existing?.justificatif || '' };
+    setBusy(true);
+    const result = await run(() => send(existing ? `/demandes/${existing.id}` : '/demandes', payload, existing ? 'PUT' : 'POST'), 'Demande enregistrée dans PostgreSQL.');
+    setBusy(false); if(result) nav(`/${user.role}/demandes`);
+  }
+  return <><Heading title={existing?'Modifier ma demande':'Votre prochaine pause commence ici.'} sub="Choisissez vos dates. Votre responsable examinera la demande."/>
+    <div className="form-grid"><section className="panel"><form onSubmit={submit}>
+      <div className="section-head"><h2>Détails de la demande</h2><CalendarDays color="#006ee9"/></div>
+      <label>Type de congé</label><select value={type} onChange={e => setType(e.target.value)} required>{db.types.map(t => <option key={t.id}>{t.name}</option>)}</select>
+      <div className="two-fields"><div><label>Date de début</label><input type="date" value={start} onChange={e => setStart(e.target.value)} required /></div><div><label>Date de fin</label><input type="date" value={end} min={start} onChange={e => setEnd(e.target.value)} required /></div></div>
+      <label>Motif</label><textarea name="reason" defaultValue={existing?.reason || ''} key={existing?.id || 'new'} placeholder="Quelques mots pour accompagner votre demande…" />
+      <label>Référence justificatif (nom seulement)</label><input name="attachment" type="file" accept=".pdf,.png,.jpg,.jpeg"/>
+      <p className="muted">Le backend actuel ne gère pas le stockage de fichiers : seul le nom du justificatif est enregistré.</p>
+      {error && <p className="error" role="alert">{error}</p>}
+      <div className="form-actions"><button className="btn secondary" type="button" onClick={() => nav(-1)}>Retour</button><button disabled={busy} className="btn">{busy?'Enregistrement…':'Soumettre ma demande →'}</button></div>
+    </form></section><aside className="summary-card"><span className="eyebrow">VOTRE DEMANDE EN UN REGARD</span>
+      <div className="summary-days">{days}<small>jours ouvrés</small></div><div className="summary-row"><span>Solde actuel</span><b>{user.balance} j</b></div>
+      <div className="summary-row"><span>Solde après approbation</span><b>{user.balance - (deduct ? days : 0)} j</b></div>
+      <p>Les samedis et dimanches sont exclus. Le calcul définitif est contrôlé par le backend.</p><div className="note">Le solde n’est débité qu’après validation.</div>
+    </aside></div>
+  </>;
+}

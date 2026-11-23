@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 import AuthLayout from "../components/AuthLayout";
 import AuthFields from "../components/AuthFields";
@@ -13,6 +13,7 @@ import {
 export default function Login() {
   const { login } = useApp();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -61,7 +62,7 @@ async function handleSubmit(event) {
       company: session.company ?? null,
     };
 
-    login(user);
+    await login(user);
     navigate(routes[role], { replace: true });
   } catch (err) {
     setError(err.message || "Impossible de contacter le serveur.");
@@ -79,6 +80,7 @@ async function handleSubmit(event) {
         Connectez-vous à votre espace professionnel.
       </p>
 
+      {location.state?.message && <p className="note" role="status">{location.state.message}</p>}
       <form onSubmit={handleSubmit}>
         <AuthFields
           email={email}
@@ -88,10 +90,6 @@ async function handleSubmit(event) {
         />
 
         <div className="options">
-          <label className="remember">
-            <input type="checkbox" />
-            Se souvenir de moi
-          </label>
 
           <Link to="/mot-de-passe-oublie">
             Mot de passe oublié ?

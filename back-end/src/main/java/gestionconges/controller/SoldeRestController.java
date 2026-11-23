@@ -23,7 +23,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/soldes")
-@CrossOrigin(origins = "*")
+
 public class SoldeRestController {
 
     @Autowired private SoldeCongeService soldeCongeService;
@@ -68,6 +68,10 @@ public class SoldeRestController {
     @GetMapping("/equipe")
     public ResponseEntity<?> getSoldesEquipe(Principal principal) {
         Utilisateur user = getUtilisateurConnecte(principal);
+        if (user.getRole() != Role.RH && user.getRole() != Role.MANAGER) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Accès réservé au RH et aux managers"));
+        }
         int annee = Year.now().getValue();
 
         Equipe equipe = user.getEquipe();
@@ -114,6 +118,10 @@ public class SoldeRestController {
 
         Long soldeId = request.soldeId();
         if (soldeId == null && request.userId() != null) {
+            if (utilisateurRepository.findByIdAndEntreprise_Id(request.userId(), user.getEntreprise().getId()).isEmpty()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Collaborateur hors de votre entreprise"));
+            }
             int annee = Year.now().getValue();
             SoldeConge sc = soldeCongeService.getOuCreerSolde(request.userId(), annee);
             soldeId = sc.getId();

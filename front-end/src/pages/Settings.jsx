@@ -1,1 +1,20 @@
-import React,{useState} from 'react';import {useApp} from '../context/AppContext';import {Heading,Modal} from '../components/UI';export default function Settings(){const {db,update,notify,reset}=useApp();const [open,setOpen]=useState(false);return <><Heading title="Les bonnes règles, dès le départ." sub="Configurez les types de congés et les règles d’acquisition."/><div className="two-columns"><section className="panel"><h2>Acquisition des congés</h2><form onSubmit={e=>{e.preventDefault();update(d=>d.company.acquisition=Number(new FormData(e.target).get('rate')));notify('Règle enregistrée. Aucun crédit automatique dans le prototype.')}}><label>Jours acquis par mois</label><input name="rate" type="number" min="0" max="31" step="0.5" defaultValue={db.company.acquisition} required/><p className="muted">Les traitements planifiés seront réalisés par le backend.</p><button className="btn">Enregistrer la règle</button></form></section><section className="panel"><div className="section-head"><h2>Types de congés</h2><button className="text-btn" onClick={()=>setOpen(true)}>Ajouter +</button></div>{db.types.map(t=><div className="setting-row" key={t.id}><span>{t.name}</span><label className="checkbox-label"><input type="checkbox" checked={t.deduct} onChange={e=>update(d=>d.types.find(x=>x.id===t.id).deduct=e.target.checked)}/>Déduit du solde</label></div>)}</section></div><section className="panel"><h2>Réinitialiser la démonstration</h2><p className="muted">Restaure les comptes et les données d’exemple. Les modifications locales seront supprimées.</p><button className="btn danger" onClick={()=>{if(confirm('Restaurer toutes les données de démonstration ?'))reset()}}>Restaurer les données d’exemple</button></section>{open&&<Modal title="Ajouter un type de congé" onClose={()=>setOpen(false)}><form onSubmit={e=>{e.preventDefault();const f=new FormData(e.target);if(db.types.some(t=>t.name.toLowerCase()===f.get('name').toLowerCase()))return notify('Ce type existe déjà.');update(d=>d.types.push({id:Date.now(),name:f.get('name'),deduct:f.get('deduct')==='on'}));setOpen(false)}}><label>Libellé</label><input name="name" required/><label className="checkbox-label"><input type="checkbox" name="deduct" defaultChecked/>Déduire du solde</label><button className="btn">Ajouter</button></form></Modal>}</>}
+import React from 'react';
+import { useApp } from '../context/AppContext';
+import { send } from '../services/api';
+import { Heading } from '../components/UI';
+export default function Settings() {
+  const {db,run}=useApp();const company=db.company;
+  async function save(e) {e.preventDefault();const f=new FormData(e.target);
+    await run(()=>send('/entreprise',{nom:company.name,joursCongesAnnuels:Number(f.get('days'))},'PUT'),'Politique annuelle mise à jour.');
+  }
+  return <><Heading title="Les bonnes règles, dès le départ." sub="Paramètres réellement disponibles dans le backend."/>
+    <div className="two-columns"><section className="panel"><h2>Politique de congés</h2><form onSubmit={save} key={company.id||'policy'}>
+      <label>Droits annuels (jours)</label><input name="days" type="number" min="0" max="365" step="1" defaultValue={company.joursCongesAnnuels??30} required/>
+      <p className="muted">Cette valeur sert à l’attribution initiale des congés. Elle ne crédite pas rétroactivement les soldes existants.</p>
+      <button className="btn">Enregistrer</button>
+    </form></section>
+    <section className="panel"><h2>Types de congés</h2><p className="muted">Ces types sont définis dans le modèle Java du backend et ne sont pas modifiables dans cette version.</p>
+      {db.types.map(t=><div key={t.id} className="setting-row"><span>{t.name}</span><span className="muted">{t.deduct?'Déduit du solde':'Sans déduction'}</span></div>)}
+    </section></div>
+  </>;
+}

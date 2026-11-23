@@ -1,0 +1,12 @@
+# LeaveFlow Spring Boot
+
+Voir [README.md à la racine](../README.md) pour les instructions complètes.
+
+JDK 21, PostgreSQL et Maven Wrapper. Configurer `DB_PASSWORD` avant de lancer :
+
+```powershell
+$env:DB_PASSWORD="VOTRE_MOT_DE_PASSE_POSTGRES"
+.\mvnw.cmd spring-boot:run
+```
+
+Authentification : Spring Security, BCrypt, UserDetailsService, roles, session HTTP, anti-CSRF.

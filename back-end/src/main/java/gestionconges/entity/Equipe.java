@@ -1,5 +1,6 @@
 package gestionconges.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
@@ -68,6 +69,9 @@ public class Equipe {
         this.description = description;
     }
 
+    @JsonIgnore
+
+
     public Entreprise getEntreprise() {
         return entreprise;
     }
@@ -75,6 +79,9 @@ public class Equipe {
     public void setEntreprise(Entreprise entreprise) {
         this.entreprise = entreprise;
     }
+
+    @JsonIgnore
+
 
     public Utilisateur getManager() {
         return manager;

@@ -22,7 +22,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/utilisateurs")
-@CrossOrigin(origins = "*")
+
 public class UtilisateurRestController {
 
     @Autowired private UtilisateurRepository utilisateurRepository;
@@ -58,7 +58,8 @@ public class UtilisateurRestController {
                 list = List.of(user);
             }
         } else {
-            list = user.getEquipe() != null ? utilisateurRepository.findByEquipe_Id(user.getEquipe().getId()) : List.of(user);
+            // Un employé ne peut pas consulter les soldes individuels de ses collègues.
+            list = List.of(user);
         }
 
         int annee = Year.now().getValue();

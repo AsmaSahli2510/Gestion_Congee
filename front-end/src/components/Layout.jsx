@@ -30,7 +30,7 @@ import { Avatar } from "./UI";
 import logo from "../images/logo.png";
 
 export default function Layout() {
-  const { user, logout, authLoading } = useApp();
+  const { user, db, logout, authLoading, dataError } = useApp();
 
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -66,9 +66,7 @@ export default function Layout() {
     "Mon entreprise";
 
   // Notifications disponibles dans le contexte utilisateur
-  const notifications = Array.isArray(user.notifications)
-    ? user.notifications
-    : [];
+  const notifications = db.notifications || [];
 
   const count = notifications.filter(
     (notification) =>
@@ -273,7 +271,7 @@ export default function Layout() {
 
         {/* Pages : dashboard, demandes, calendrier, etc. */}
         <main className="page-content">
-          <Outlet />
+          {dataError && <div className="note" role="alert">{dataError}</div>}<Outlet />
         </main>
 
         <footer className="app-footer">

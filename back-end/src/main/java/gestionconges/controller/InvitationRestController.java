@@ -18,7 +18,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/invitations")
-@CrossOrigin(origins = "*")
+
 public class InvitationRestController {
 
     @Autowired private InvitationService invitationService;

@@ -22,7 +22,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/demandes")
-@CrossOrigin(origins = "*")
+
 public class DemandeCongeRestController {
 
     @Autowired
@@ -114,13 +114,21 @@ public class DemandeCongeRestController {
         Utilisateur utilisateur = getUtilisateurConnecte(principal);
         DemandeConge demande = demandeCongeService.trouverDemande(id);
 
-        // RG06 : Contrôle entreprise_id à chaque opération
-        if (utilisateur.getEntreprise() != null && demande.getEntreprise() != null
-                && !demande.getEntreprise().getId().equals(utilisateur.getEntreprise().getId())) {
+        // Contrôle d'accès côté serveur : entreprise ET périmètre du rôle.
+        if (utilisateur.getEntreprise() == null || demande.getEntreprise() == null
+                || !demande.getEntreprise().getId().equals(utilisateur.getEntreprise().getId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", "Accès refusé : ressource appartenant à une autre entreprise"));
+                    .body(Map.of("message", "Demande hors de votre entreprise"));
         }
-
+        boolean personnelle = demande.getUtilisateur().getId().equals(utilisateur.getId());
+        boolean rh = utilisateur.getRole() == Role.RH;
+        Equipe equipeManager = utilisateur.getRole() == Role.MANAGER ? getEquipeDuManager(utilisateur) : null;
+        boolean equipeAutorisee = equipeManager != null && demande.getUtilisateur().getEquipe() != null
+                && equipeManager.getId().equals(demande.getUtilisateur().getEquipe().getId());
+        if (!personnelle && !rh && !equipeAutorisee) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Vous n'avez pas accès à cette demande"));
+        }
         return ResponseEntity.ok(demande);
     }
 

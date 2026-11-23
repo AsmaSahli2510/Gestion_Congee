@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "demandes_conge")
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class DemandeConge {
 
     @Id
@@ -68,6 +68,9 @@ public class DemandeConge {
         this.id = id;
     }
 
+    @JsonIgnore
+
+
     public Entreprise getEntreprise() {
         return entreprise;
     }
@@ -75,6 +78,9 @@ public class DemandeConge {
     public void setEntreprise(Entreprise entreprise) {
         this.entreprise = entreprise;
     }
+
+    @JsonIgnore
+
 
     public Utilisateur getUtilisateur() {
         return utilisateur;
@@ -160,6 +166,9 @@ public class DemandeConge {
         this.commentaireDecision = commentaireDecision;
     }
 
+    @JsonIgnore
+
+
     public Utilisateur getValideur() {
         return valideur;
     }
@@ -201,7 +210,8 @@ public class DemandeConge {
 
     @JsonProperty("userTeam")
     public String getUserTeam() {
-        return (utilisateur != null && utilisateur.getEquipe() != null) ? utilisateur.getEquipe().getNom() : "Sans équipe";
+        return (utilisateur != null && utilisateur.getEquipe() != null) ? utilisateur.getEquipe().getNom()
+                : "Sans équipe";
     }
 
     @JsonProperty("start")

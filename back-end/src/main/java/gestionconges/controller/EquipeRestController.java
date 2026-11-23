@@ -19,7 +19,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/equipes")
-@CrossOrigin(origins = "*")
+
 public class EquipeRestController {
 
    @Autowired private EquipeService equipeService;

@@ -116,8 +116,8 @@ public class EntrepriseServiceImpl implements EntrepriseService {
         if (nom != null && !nom.isBlank()) {
             entreprise.setNom(nom.trim());
         }
-        entreprise.setSecteur(secteur);
-        entreprise.setDescription(description);
+        if (secteur != null) entreprise.setSecteur(secteur);
+        if (description != null) entreprise.setDescription(description);
         if (joursConges != null && joursConges > 0) {
             entreprise.setJoursCongesAnnuels(joursConges);
         }

@@ -1,1 +1,31 @@
-import React,{useState} from 'react';import {Link,useNavigate,useSearchParams} from 'react-router-dom';import AuthLayout from '../components/AuthLayout';import AuthFields from '../components/AuthFields';import {useApp} from '../context/AppContext';export default function Invitation(){const {db,update}=useApp();const [params]=useSearchParams();const [error,setError]=useState('');const nav=useNavigate();return <AuthLayout><Link className="back" to="/signup">← Choisir un autre parcours</Link><h2>Votre équipe vous attend.</h2><p className="sub">Votre rôle et votre entreprise sont définis par votre RH.</p><form onSubmit={e=>{e.preventDefault();const f=new FormData(e.target);const i=db.invitations.find(i=>i.code===f.get('code')&&i.email.toLowerCase()===f.get('email').toLowerCase()&&!i.used&&Date.now()<i.expires);if(!i){setError('Invitation invalide, expirée ou déjà utilisée. Créez une invitation depuis l’espace RH.');return}const id=Date.now();update(d=>{d.users.push({id,name:f.get('name'),email:i.email,role:i.role,team:i.team,balance:0,active:true});d.invitations.find(x=>x.id===i.id).used=true;d.session=id});nav('/'+i.role+'/dashboard')}}><label className="field" htmlFor="code">Code d’invitation</label><div className="input-box"><input style={{paddingLeft:16}} name="code" id="code" defaultValue={params.get('code')||''} placeholder="Code reçu de votre RH" required/></div><label className="field" htmlFor="name">Votre nom complet</label><div className="input-box"><input style={{paddingLeft:16}} name="name" id="name" required/></div><AuthFields newPassword/>{error&&<p className="form-error" role="alert">{error}</p>}<button className="submit">Activer mon compte →</button></form></AuthLayout>}
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import AuthLayout from '../components/AuthLayout';
+import { activateInvitation, checkInvitation } from '../services/authService';
+export default function Invitation() {
+  const [params] = useSearchParams(); const nav = useNavigate();
+  const [token, setToken] = useState(params.get('token') || params.get('code') || '');
+  const [info, setInfo] = useState(null); const [error, setError] = useState(''); const [loading, setLoading] = useState(false);
+  useEffect(() => { if (!token.trim()) { setInfo(null); return; } let live = true;
+    checkInvitation(token.trim()).then(i => { if(live){setInfo(i);setError('');} }).catch(e => { if(live){setInfo(null);setError(e.message);} });
+    return () => { live = false; };
+  }, [token]);
+  async function submit(e) { e.preventDefault(); setLoading(true); setError(''); const f = new FormData(e.target);
+    const parts = String(f.get('name')).trim().split(/\s+/);
+    try {
+      await activateInvitation({ token: token.trim(), prenom: parts.shift(), nom: parts.join(' ') || '-', motDePasse: f.get('password') });
+      nav('/login', { replace: true, state: { message: 'Compte activé. Connectez-vous.' } });
+    } catch (err) { setError(err.message); } finally { setLoading(false); }
+  }
+  return <AuthLayout><Link to="/signup" className="back">← Retour</Link><h2>Votre équipe vous attend.</h2>
+    <p className="sub">Votre rôle et votre entreprise sont définis par votre RH.</p>
+    <label className="field" htmlFor="token">Code d’invitation</label><div className="input-box"><input style={{paddingLeft:16}} id="token" value={token} onChange={e => setToken(e.target.value)} placeholder="Code reçu de votre RH" /></div>
+    {info && <p className="note">{info.entrepriseNom} · {info.role} · {info.email}</p>}
+    <form onSubmit={submit}>
+      <label className="field" htmlFor="name">Nom complet</label><div className="input-box"><input style={{paddingLeft:16}} name="name" id="name" required /></div>
+      <label className="field" htmlFor="password">Mot de passe</label><div className="input-box"><input style={{paddingLeft:16}} name="password" id="password" type="password" minLength={6} autoComplete="new-password" required /></div>
+      {error && <p role="alert" className="form-error">{error}</p>}
+      <button className="submit" disabled={!info || loading}>{loading?'Activation…':'Activer mon compte →'}</button>
+    </form>
+  </AuthLayout>;
+}

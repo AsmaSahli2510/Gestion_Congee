@@ -1,16 +1,14 @@
-
-# Frontend
-front-end/node_modules/
-front-end/dist/
-front-end/.env
-front-end/.env.*
-
-# Backend
-back-end/target/
-back-end/.env
-back-end/.env.*
-
-# IDE et système
+# Secrets & environments
+.env
+.env.*
+!.env.example
+*.log
+# Generated output
+node_modules/
+dist/
+target/
+build/
+coverage/
+.DS_Store
 .idea/
 .vscode/
-.DS_Store

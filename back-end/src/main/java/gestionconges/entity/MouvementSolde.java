@@ -1,5 +1,6 @@
 package gestionconges.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
@@ -60,6 +61,9 @@ public class MouvementSolde {
         this.id = id;
     }
 
+    @JsonIgnore
+
+
     public Entreprise getEntreprise() {
         return entreprise;
     }
@@ -68,6 +72,9 @@ public class MouvementSolde {
         this.entreprise = entreprise;
     }
 
+    @JsonIgnore
+
+
     public SoldeConge getSolde() {
         return solde;
     }
@@ -75,6 +82,9 @@ public class MouvementSolde {
     public void setSolde(SoldeConge solde) {
         this.solde = solde;
     }
+
+    @JsonIgnore
+
 
     public Utilisateur getUtilisateur() {
         return utilisateur;
@@ -99,6 +109,9 @@ public class MouvementSolde {
     public void setRaison(String raison) {
         this.raison = raison;
     }
+
+    @JsonIgnore
+
 
     public Utilisateur getAuteur() {
         return auteur;

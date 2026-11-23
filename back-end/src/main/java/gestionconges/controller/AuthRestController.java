@@ -17,12 +17,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -32,7 +33,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
+
 public class AuthRestController {
 
    @Autowired private AuthenticationManager authenticationManager;
@@ -42,13 +43,19 @@ public class AuthRestController {
    @Autowired private SoldeCongeService soldeCongeService;
 
 
+    // Le cookie XSRF-TOKEN permet au frontend d'envoyer X-XSRF-TOKEN sur les écritures.
+    @GetMapping("/csrf")
+    public Map<String, String> csrf(CsrfToken csrfToken) {
+        return Map.of("headerName", csrfToken.getHeaderName(), "token", csrfToken.getToken());
+    }
+
     @PostMapping("/login")
     public ResponseEntity<?> login(
             @Valid @RequestBody LoginRequest loginRequest,
             @CookieValue(value = "JSESSIONID", required = false) String sessionId,
             HttpServletRequest request) {
 
-        String email = loginRequest.email();
+        String email = loginRequest.email().trim().toLowerCase();
         String password = loginRequest.password();
 
         try {
@@ -59,6 +66,8 @@ public class AuthRestController {
             SecurityContext securityContext = SecurityContextHolder.getContext();
             securityContext.setAuthentication(authentication);
 
+            HttpSession existingSession = request.getSession(false);
+            if (existingSession != null) request.changeSessionId();
             HttpSession session = request.getSession(true);
             session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, securityContext);
 
@@ -74,7 +83,7 @@ public class AuthRestController {
             response.put("message", "Connexion réussie");
 
             return ResponseEntity.ok(response);
-        } catch (BadCredentialsException e) {
+        } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("success", false, "message", "Email ou mot de passe incorrect."));
         }
@@ -171,9 +180,9 @@ public class AuthRestController {
     @PostMapping("/mot-de-passe-oublie")
     public ResponseEntity<?> motDePasseOublie(@RequestBody Map<String, String> body) {
         String email = body != null ? body.get("email") : "";
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Si un compte est associé à l'adresse " + (email != null ? email : "") + ", un lien de réinitialisation sécurisé vous a été envoyé."
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(Map.of(
+                "success", false,
+                "message", "Réinitialisation par email non configurée. Contactez votre administrateur RH."
         ));
     }
 }

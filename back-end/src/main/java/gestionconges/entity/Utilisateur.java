@@ -1,5 +1,6 @@
 package gestionconges.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import gestionconges.enums.Role;
@@ -129,6 +130,9 @@ public class Utilisateur {
         this.telephone = telephone;
     }
 
+    @JsonIgnore
+
+
     public Entreprise getEntreprise() {
         return entreprise;
     }
@@ -136,6 +140,9 @@ public class Utilisateur {
     public void setEntreprise(Entreprise entreprise) {
         this.entreprise = entreprise;
     }
+
+    @JsonIgnore
+
 
     public Equipe getEquipe() {
         return equipe;

@@ -1,3 +1,4 @@
+
 package gestionconges.config;
 
 import gestionconges.service.CustomUserDetailsService;
@@ -6,7 +7,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -49,8 +51,11 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
+                .authenticationProvider(authenticationProvider())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
                             if (request.getRequestURI().startsWith("/api/")) {
@@ -60,6 +65,11 @@ public class SecurityConfig {
                             } else {
                                 response.sendRedirect("/login");
                             }
+                        })
+                        .accessDeniedHandler((request, response, exception) -> {
+                            response.setStatus(HttpStatus.FORBIDDEN.value());
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"message\":\"Accès interdit\"}");
                         })
                 )
                 .authorizeHttpRequests(authorize -> authorize
@@ -74,9 +84,6 @@ public class SecurityConfig {
                                 "/invitations/**",
                                 "/mot-de-passe-oublie",
                                 "/error",
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
                                 "/api/auth/**",
                                 "/api/test",
                                 "/api/invitations/verifier")
@@ -92,7 +99,6 @@ public class SecurityConfig {
                         .hasAnyRole("EMPLOYE", "MANAGER", "RH")
 
                         .anyRequest().authenticated())
-                .httpBasic(Customizer.withDefaults())
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/login")
@@ -121,7 +127,7 @@ public class SecurityConfig {
         ));
 
         configuration.setAllowedHeaders(List.of(
-                "Authorization", "Content-Type", "Accept", "X-Requested-With"
+                "Authorization", "Content-Type", "Accept", "X-Requested-With", "X-XSRF-TOKEN"
         ));
 
         configuration.setAllowCredentials(true);
